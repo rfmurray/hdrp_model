@@ -40,14 +40,15 @@ uB = srgb(vB);
 xylim = [ 0 1.1 ];
 plot(xylim, xylim, 'k--');
 hold on
-plot(uR, uRhat, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 10);
-plot(uG, uGhat, 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 10);
-plot(uB, uBhat, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 10);
+hr = plot(uR, uRhat, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 10);
+hg = plot(uG, uGhat, 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 10);
+hb = plot(uB, uBhat, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 10);
 hold off
 axis square
 axis([ xylim xylim ]);
 xlabel 'actual u_k'
 ylabel 'predicted u_k'
+legend([hr hg hb], 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off', 'AutoUpdate', 'off');
 set(gca,'FontSize',18);
 
 % find regression slope of above plot

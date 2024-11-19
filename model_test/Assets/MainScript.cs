@@ -109,14 +109,14 @@ public class MainScript : MonoBehaviour
         // directional light color, intensity, and direction
         directionalColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         directionalLight.color = directionalColor;
-        directionalLight.intensity = directionalIntensity = Random.Range(0f, Mathf.PI * 1.2f);
+        directionalLight.intensity = directionalIntensity = Random.Range(0f, Mathf.PI * 1.1f);
         lightDir = RandomUnitVector3();
         directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), lightDir);
 
         // ambient light color and intensity
         ambientColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         sky.top.value = sky.middle.value = sky.bottom.value = ambientColor;
-        sky.multiplier.value = ambientMultiplier = Random.Range(0f, 1.2f);
+        sky.multiplier.value = ambientMultiplier = Random.Range(0f, 1.1f);
 
         // start a capture request        
         ++trialCount;
