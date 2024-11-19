@@ -1,5 +1,5 @@
-% render_test_2.m  Test rendering and post-processing models for Lambertian
-%                  and unlit materials
+% model_test_2.m  Test rendering and post-processing models for Lambertian
+%                 and unlit materials
 
 % See readme_appendix_b.txt for details about how to run this test.
 
@@ -7,6 +7,8 @@ clear; clc;
 
 addpath tools
 
+% choose whether to test results from model_test Unity project with
+% a Lambertian or an unlit material
 testLambertian = true;
 
 if testLambertian
@@ -44,17 +46,21 @@ else
 
 end
 
-% plot predicted post-processed color coordinates v_k against actual coordinates
+% plot predicted post-processed color coordinates v_k against actual,
+% rendered coordinates; just plot a subset, so that results for the blue
+% channel (which are plotted last) don't cover up results for the red
+% and green channels
 xylim = [ 0 1.2 ];
 plot(xylim, xylim, 'k--');
 hold on
-plot(d.renderR, vR, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 10);
-plot(d.renderG, vG, 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 10);
-plot(d.renderB, vB, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 10);
+hr = plot(d.renderR(1:30), vR(1:30), 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
+hg = plot(d.renderG(1:30), vG(1:30), 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
+hb = plot(d.renderB(1:30), vB(1:30), 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
 hold off
 axis square
 axis([ xylim xylim ]);
 xlabel 'actual v_k'
 ylabel 'predicted v_k'
+legend([hr hg hb], 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off');
 set(gca,'FontSize',18);
 print -dpdf model_test_2.pdf
