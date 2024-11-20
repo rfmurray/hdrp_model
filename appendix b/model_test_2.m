@@ -5,7 +5,7 @@
 
 clear; clc;
 
-addpath tools
+addpath ../tools
 
 % choose whether to test results from model_test Unity project with
 % a Lambertian or an unlit material
@@ -50,8 +50,9 @@ end
 % rendered coordinates; just plot a subset, so that results for the blue
 % channel (which are plotted last) don't cover up results for the red
 % and green channels
+figure(1);
 xylim = [ 0 1.2 ];
-plot(xylim, xylim, 'k--');
+plot(xylim, xylim, 'k-');
 hold on
 hr = plot(d.renderR(1:30), vR(1:30), 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 hg = plot(d.renderG(1:30), vG(1:30), 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
@@ -63,4 +64,21 @@ xlabel 'actual v_k'
 ylabel 'predicted v_k'
 legend([hr hg hb], 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off');
 set(gca,'FontSize',18);
-print -dpdf model_test_2.pdf
+print -dpdf model_test_2a.pdf
+
+figure(2);
+xlim = [ 0 1 ];
+hr = plot(d.renderR,vR-d.renderR, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
+hold on
+hg = plot(d.renderG,vG-d.renderG,'go', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
+hb = plot(d.renderB,vB-d.renderB,'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
+plot(xlim,0.5*(-1/255)*[ 1 1 ],'k-');
+plot(xlim,0.5*(1/255)*[ 1 1 ],'k-');
+hold off
+axis square
+axis([ xlim (5/255)*[ -1 1 ] ]);
+xlabel 'actual v_k'
+ylabel 'prediction error for v_k'
+legend([hr hg hb], 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off');
+set(gca,'FontSize',18);
+print -dpdf model_test_2b.pdf

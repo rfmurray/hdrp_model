@@ -2,7 +2,7 @@
 
 clear; clc; clf;
 
-addpath tools
+addpath ../tools
 
 data = load('find_knots/data_knots.txt');
 data = data(data(:,1)>=3,:);
