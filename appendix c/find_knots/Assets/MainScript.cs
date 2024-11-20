@@ -16,7 +16,7 @@ public class MainScript : MonoBehaviour
     Texture3DParameter texparam;
     int delta = 1, phase = 0, framei = 0;
 
-    float light_intensity = 1e-4f;
+    float light_intensity = 1e-3f;
     float plane_grey_out = -1f;
 
     StreamWriter sr;
@@ -33,7 +33,7 @@ public class MainScript : MonoBehaviour
         texparam = tmap.lutTexture;
 
         sr = System.IO.File.CreateText("data_knots.txt");
-        sr.WriteLine("delta,light_intensity,grey_out");
+        //sr.WriteLine("delta,light_intensity,grey_out");
 
     }
 
@@ -87,15 +87,15 @@ public class MainScript : MonoBehaviour
             string dataline = $"{delta},{light_intensity:F9},{plane_grey_out}"; // record red, green, and blue color coordinates
             sr.WriteLine(dataline);
 
-            light_intensity *= 1.1f;  // 1.05f
-            if (light_intensity > 200f)
+            light_intensity *= 1.05f;
+            if (light_intensity > 400f)
             {
                 if (++delta > 32)
                     Finish();
                 else
                 {
                     SetDelta();
-                    light_intensity = 1e-4f;
+                    light_intensity = 1e-3f;
                 }
             }
             phase = 1;
