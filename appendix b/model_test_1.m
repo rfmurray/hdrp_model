@@ -1,4 +1,5 @@
 % model_test_1.m  Find rendering scale constant c for Lambertian materials
+%                 (see equation (2) in main text)
 
 % See readme_appendix_b.txt for details about how to run this test.
 
