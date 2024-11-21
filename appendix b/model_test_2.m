@@ -10,6 +10,11 @@ addpath ../tools
 % choose whether to test results from model_test Unity project with
 % a Lambertian or an unlit material
 testLambertian = true;
+tonemapping = false;
+
+if tonemapping
+    tonemap = TonemapCube('linearize.cube');
+end
 
 if testLambertian
 
@@ -28,11 +33,28 @@ if testLambertian
     uG = c * srgb(d.planeColorG) .* ( d.directionalIntensity .* srgb(d.directionalColorG) .* max(costheta, 0) / pi + d.ambientMultiplier .* d.ambientColorG );
     uB = c * srgb(d.planeColorB) .* ( d.directionalIntensity .* srgb(d.directionalColorB) .* max(costheta, 0) / pi + d.ambientMultiplier .* d.ambientColorB );
 
+    % apply tonemapping
+    if tonemapping
+        tR = NaN(size(uR));
+        tG = NaN(size(uG));
+        tB = NaN(size(uB));
+        for i = 1:numel(uR)
+            tRGB = tonemap.apply([uR(i) uG(i) uB(i)]);
+            tR(i) = tRGB(1);
+            tG(i) = tRGB(2);
+            tB(i) = tRGB(3);
+        end
+    else
+        tR = uR;
+        tG = uG;
+        tB = uB;
+    end
+
     % apply sRGB nonlinearity to get predictions for post-processed color
     % coordinates v_k
-    vR = srgbinv(uR);
-    vG = srgbinv(uG);
-    vB = srgbinv(uB);
+    vR = srgbinv(tR);
+    vG = srgbinv(tG);
+    vB = srgbinv(tB);
 
 else
 
@@ -44,6 +66,8 @@ else
     vR = d.planeColorR;
     vG = d.planeColorG;
     vB = d.planeColorB;
+
+    % *** apply tonemapping in this case too
 
 end
 
