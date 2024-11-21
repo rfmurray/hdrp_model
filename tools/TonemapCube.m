@@ -14,7 +14,7 @@ classdef TonemapCube < handle
         % filename of .cube file
         filename = ''
 
-        % interpolation method for interp3
+        % interpolation method for interpn
         method = 'linear'
 
     end
@@ -62,6 +62,7 @@ classdef TonemapCube < handle
             obj.makecoord;
         end
 
+        % create coordinate matrices
         function makecoord(obj, u_knot)
             if nargin >= 2
                 obj.u_knot = u_knot;

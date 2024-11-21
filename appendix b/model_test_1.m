@@ -39,7 +39,7 @@ uB = srgb(vB);
 % plot predicted rendered color coordinates u_k, without scale constant c,
 % against actual coordinates
 xylim = [ 0 1.1 ];
-plot(xylim, xylim, 'k--');
+plot(xylim, xylim, 'k-');
 hold on
 hr = plot(uR, uRhat, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 10);
 hg = plot(uG, uGhat, 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 10);

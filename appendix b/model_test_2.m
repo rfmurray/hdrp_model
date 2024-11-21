@@ -22,6 +22,7 @@ if testLambertian
     costheta = d.lightDirX .* d.planeNormalX + d.lightDirY .* d.planeNormalY + d.lightDirZ .* d.planeNormalZ;
 
     % find rendering model's predictions for rendered color coordinates u_k
+    % (exposure in Unity project model_test is set to zero)
     c = 0.822;
     uR = c * srgb(d.planeColorR) .* ( d.directionalIntensity .* srgb(d.directionalColorR) .* max(costheta, 0) / pi + d.ambientMultiplier .* d.ambientColorR );
     uG = c * srgb(d.planeColorG) .* ( d.directionalIntensity .* srgb(d.directionalColorG) .* max(costheta, 0) / pi + d.ambientMultiplier .* d.ambientColorG );
@@ -65,6 +66,7 @@ ylabel 'predicted v_k'
 legend([hr hg hb], 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off');
 set(gca,'FontSize',18);
 print -dpdf model_test_2a.pdf
+print -depsc2 model_test_2a.eps
 
 figure(2);
 xlim = [ 0 1 ];
@@ -72,8 +74,8 @@ hr = plot(d.renderR,vR-d.renderR, 'ro', 'MarkerFaceColor', 'r', 'MarkerSize', 8)
 hold on
 hg = plot(d.renderG,vG-d.renderG,'go', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
 hb = plot(d.renderB,vB-d.renderB,'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 8);
-plot(xlim,0.5*(-1/255)*[ 1 1 ],'k-');
-plot(xlim,0.5*(1/255)*[ 1 1 ],'k-');
+plot(xlim,(-1/255)*[ 1 1 ],'k-');
+plot(xlim,(1/255)*[ 1 1 ],'k-');
 hold off
 axis square
 axis([ xlim (5/255)*[ -1 1 ] ]);
@@ -82,3 +84,4 @@ ylabel 'prediction error for v_k'
 legend([hr hg hb], 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off');
 set(gca,'FontSize',18);
 print -dpdf model_test_2b.pdf
+print -depsc2 model_test_2b.eps
