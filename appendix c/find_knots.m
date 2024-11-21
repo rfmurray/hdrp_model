@@ -2,64 +2,65 @@
 
 clear; clc; clf;
 
-addpath ../tools
+% addpath ../tools
+addpath tools
 
-data = load('find_knots/data_knots.txt');
-data = data(data(:,1)>=3,:);
-data(:,1) = data(:,1)-2;
-
-% *** convert light intensity to rendered u_k
+data = readtable('find_knots/data_knots.txt');
+data = data(data.delta>=3,:);
+data.delta = data.delta - 2;
+data.u_k = 0.822 * data.light_intensity / pi;
+data.v_k = data.grey_out/255;
+data.t_k = srgb(data.v_k);
 
 % 1. get initial estimates of peak locations
 
 figure(1);
 hold on
-xlabel 'light intensity'
-ylabel 'tonemapped k_t'
+xlabel 'rendered u_k'
+ylabel 'tonemapped t_k'
 set(gca,'FontSize',18);
-xlim = [ min(data(:,2)) max(data(:,2)) ];
+xlim = [ min(data.u_k) max(data.u_k) ];
 axis([ xlim 0 1.1 ]);
 set(gca,'XScale','log');
 box on
 
-n = max(data(:,1));
-k_i_knot_init = NaN([ n 1 ]);
+n = max(data.delta);
+u_knot_init = NaN([ n 1 ]);
 
 for i = 1:n
     
-    d = data(data(:,1)==i,:);
-    k_i = d(:,2);
-    k_f = d(:,3)/255;
-    k_t = srgb(k_f);
+    d = data(data.delta==i,:);
     
     if i==1
-        k_i_knot_init(i) = 0;
+        j = find(d.t_k>0.99,1,'last');
     elseif i==n
-        j = find(k_t==1,1,'first');
-        k_i_knot_init(i) = k_i(j);
+        j = find(d.t_k==1,1,'first');
     else
-        [~,j] = max(k_t);
-        k_i_knot_init(i) = k_i(j);
+        [~,j] = max(d.t_k);
     end
+    u_knot_init(i) = d.u_k(j);
     
-    plot(k_i, k_t, 'ro-', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
-    plot([ k_i_knot_init(i) k_i_knot_init(i) ],[ 0 255 ],'k-');
+    plot(d.u_k, d.t_k, 'ro-', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
+    plot(u_knot_init(i)*[ 1 1 ],[ 0 1.1 ],'k-');
     drawnow;
 
 end
 
 % 2. refine estimates of peak locations
 
-err_pre = errfn(k_i_knot_init,data)
-
 errfn2 = @(p) errfn(p,data);
-k_i_knot = fminsearch(errfn2,k_i_knot_init);
+u_knot = fminsearch(errfn2,u_knot_init);
 
-err_post = errfn(k_i_knot,data,true)
+% interpolation between these knot points works differently, so the
+% initial estimates are more accurate
+u_knot(1:2) = u_knot_init(1:2);
 
-% convert k_i to k_d and save
-% k_d_knot = 0.2622 * k_i_knot * 1.0 * cosd(0) / (2^0);
-% save k_d_knot.mat k_d_knot
+% check that the new knot points are better
+err_pre = errfn(u_knot_init,data)
+err_post = errfn(u_knot,data,true)
+
+fprintf('%.3e ',u_knot);
+fprintf('\n');
 
 
 function err = errfn(p, data, plotit)
@@ -67,22 +68,18 @@ function err = errfn(p, data, plotit)
 if nargin<3, plotit=false; end
 
 if plotit
-    k_i = data(:,2);
-    xx = logspace(log10(min(k_i)),log10(max(k_i)),10000);
+    xx = logspace(log10(min(data.u_k)),log10(max(data.u_k)),10000);
 end
 
-n = max(data(:,1));
+n = max(data.delta);
 err = 0;
-for k = 1:n
-    d = data(data(:,1)==k,:);
-    k_i = d(:,2);
-    k_f = d(:,3)/255;
-    k_t = srgb(k_f);
-    k_t_hat = npeaks(k_i,k,p);
-    err = err + sum((k_t_hat-k_t).^2);
-
+for i = 1:n
+    d = data(data.delta==i,:);
+    t_k_hat = npeaks(d.u_k,i,p);
+    err = err + sum((t_k_hat-d.t_k).^2);
+    
     if plotit
-        plot(xx,npeaks(xx,k,p),'b-');
+        plot(xx,npeaks(xx,i,p),'b-');
     end
 
 end
