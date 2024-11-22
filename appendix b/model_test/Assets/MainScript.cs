@@ -7,14 +7,15 @@ using UnityEngine.Rendering.HighDefinition;
 
 public class MainScript : MonoBehaviour
 {
+    // configure test
+    public bool testLambertian, testTonemap;
+
     // scene objects
     public GameObject plane;
     public Material materialLambertian, materialUnlit;
     public Light directionalLight;
     public Volume volume;
     GradientSky sky;
-
-    public bool testLambertian;
 
     // properties of scene objects that we'll set randomly
     Color materialColor, directionalColor, ambientColor;
@@ -53,11 +54,20 @@ public class MainScript : MonoBehaviour
         // choose the material that we'll test
         Renderer renderer = plane.GetComponent<Renderer>();
         renderer.material = testLambertian ? materialLambertian : materialUnlit;
-        filename = testLambertian ? "data_lambertian.txt" : "data_unlit.txt";
+
+        // turn tonemapping on or off
+        volume.sharedProfile.TryGet<Tonemapping>(out Tonemapping tonemap);
+        tonemap.mode.Override(testTonemap ? TonemappingMode.External : TonemappingMode.None);
 
         // seed rng
         int rngseed = (int)System.DateTime.Now.Ticks;
         Random.InitState(rngseed);
+
+        // create filename
+        filename = "data";
+        filename += testLambertian ? "_lambertian" : "_unlit";
+        filename += testTonemap ? "_tonemap" : "_notonemap";
+        filename += ".txt";
 
         // write header to data file
         using (StreamWriter writer = new StreamWriter(filename, append: false))

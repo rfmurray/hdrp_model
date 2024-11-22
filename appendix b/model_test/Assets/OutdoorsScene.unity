@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.2924805, g: 0.71923834, b: 0.93164074, a: 1}
+  m_IndirectSpecularColor: {r: 0.39550787, g: 0.302002, b: 0.2127686, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -730,12 +730,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aea2cbac62ab544a38c0f2410a121d34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  testLambertian: 1
+  testTonemap: 0
   plane: {fileID: 850274521}
   materialLambertian: {fileID: 2100000, guid: a109c283f1bf4413184e41de09b14b17, type: 2}
   materialUnlit: {fileID: 2100000, guid: a5fc51b942020473db22dc8fad39df31, type: 2}
   directionalLight: {fileID: 1797693912}
   volume: {fileID: 930120581}
-  testLambertian: 1
 --- !u!1 &2013410473
 GameObject:
   m_ObjectHideFlags: 1
