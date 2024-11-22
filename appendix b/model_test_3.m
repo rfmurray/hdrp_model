@@ -22,7 +22,8 @@ xlabel v1_k
 ylabel v2_k
 set(gca,'FontSize',18);
 
-t = TonemapCube('model_test/Assets/square.cube');
+t = TonemapCube('model_test/Assets/delta_16.cube');
+t.method = 'linear';
 v1_k = linspace(0,1,100)';
 u1_k = srgb(v1_k);
 t_k = t.apply(repmat(u1_k,[1 3]));

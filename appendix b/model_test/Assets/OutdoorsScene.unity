@@ -731,7 +731,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testLambertian: 1
-  testTonemap: 1
+  testTonemap: 0
   plane: {fileID: 850274521}
   materialLambertian: {fileID: 2100000, guid: a109c283f1bf4413184e41de09b14b17, type: 2}
   materialUnlit: {fileID: 2100000, guid: a5fc51b942020473db22dc8fad39df31, type: 2}
