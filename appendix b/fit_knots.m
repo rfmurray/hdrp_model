@@ -47,13 +47,13 @@ k1 = tonemap.u_knot(3:19);
 err1 = errfn2(k1)
 
 phat = fminsearch(errfn2, tonemap.u_knot(3:19) + 1);
+% *** use fmincon to constrain order of knot points
+
 tonemap.u_knot(3:19) = phat;
+tonemap.makecoord;
 
 k2 = tonemap.u_knot(3:19);
 err2 = errfn2(k2)
-
-% *** somehow, having the parameters u_knot completely outside the appropriate
-% range of [0, 1] isn't affecting the tonemapping results or the error; why?
 
 t2_rgb_hat = tonemap.apply(u1_rgb);
 v2_rgb_hat = srgbinv(t2_rgb_hat);
@@ -71,6 +71,7 @@ set(gca,'FontSize',18);
 
 function e = errfn(u_knot, u1_rgb, v2_rgb, tonemap)
 tonemap.u_knot(3:19) = u_knot;
+tonemap.makecoord;
 t2_rgb_hat = tonemap.apply(u1_rgb);
 v2_rgb_hat = srgbinv(t2_rgb_hat);
 e = sum( (v2_rgb_hat - v2_rgb).^2, "all" );
