@@ -49,6 +49,11 @@ err1 = errfn2(k1)
 phat = fminsearch(errfn2, tonemap.u_knot(3:19) + 1);
 % *** use fmincon to constrain order of knot points
 
+nknot = numel(t.u_knot(3:19));
+A = eye(nknot) + diag(repmat(-1,[1 nknot-1]),1);
+A = A(1:end-1,:);
+B = zeros([ size(A,1) 1]);
+
 tonemap.u_knot(3:19) = phat;
 tonemap.makecoord;
 
