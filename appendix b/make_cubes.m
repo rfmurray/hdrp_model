@@ -21,4 +21,4 @@ t.save('delta_16.cube');
 
 t_knot = t.u_knot;
 t.setchannels(t_knot);
-t.save('none.cube');
+t.save('identity.cube');

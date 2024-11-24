@@ -5,16 +5,16 @@ clear; clc;
 % addpath ../tools
 addpath tools
 
-d1 = readtable('model_test/data_lambertian_notonemap.txt');
-d2 = readtable('model_test/data_lambertian_tonemap.txt');
+data1 = readtable('model_test/data_lambertian_notonemap.txt');
+data2 = readtable('model_test/data_lambertian_tonemap.txt');
 
-% d1 = readtable('model_test/data_unlit_notonemap.txt');
-% d2 = readtable('model_test/data_unlit_tonemap.txt');
+% data1 = readtable('model_test/data_unlit_notonemap.txt');
+% data2 = readtable('model_test/data_unlit_tonemap.txt');
 
-plot(d1.renderR, d2.renderR, 'ro', 'MarkerFaceColor' ,'r');
+plot(data1.renderR, data2.renderR, 'ro', 'MarkerFaceColor' ,'r');
 hold on
-plot(d1.renderG, d2.renderG, 'go', 'MarkerFaceColor' ,'g');
-plot(d1.renderB, d2.renderB, 'bo', 'MarkerFaceColor' ,'b');
+plot(data1.renderG, data2.renderG, 'go', 'MarkerFaceColor' ,'g');
+plot(data1.renderB, data2.renderB, 'bo', 'MarkerFaceColor' ,'b');
 hold off
 axis square
 axis([0 1 0 1]);
