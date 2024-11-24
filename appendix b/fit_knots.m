@@ -5,19 +5,16 @@ clear; clc;
 % addpath ../tools
 addpath tools
 
-% data1 = readtable('model_test/data_lambertian_notonemap.txt');
-% data2 = readtable('model_test/data_lambertian_tonemap.txt');
+data1 = readtable('data_L1_T0_F1_A1_S05000_M1.txt');
+data2 = readtable('data_L1_T1_F1_A1_S05000_M1.txt');
 
-data1 = readtable('model_test/data_unlit_notonemap.txt');
-data2 = readtable('model_test/data_unlit_tonemap.txt');
-
-tonemap = TonemapCube('model_test/Assets/square_root.cube');
-tonemap.u_knot = [ 0 1e-09 1.402e-05 0.003089 0.007417 0.01272 0.021 0.03146 0.04521 0.06482 0.09131 0.126 0.1736 0.2381 0.3303 0.4483 0.6096 0.8295 1.124 1.498 2.039 2.766 3.76 5.072 6.871 9.398 12.65 17.25 23.25 31.41 43.01 57.74 ];
-tonemap.u_knot(3:19) = linspace(0.01,1,17);
-tonemap.makecoord;
+% data1 = readtable('data_L0_T0_F1_A1_S05000_M1.txt');
+% data2 = readtable('data_L0_T1_F1_A1_S05000_M1.txt');
 
 v1 = [ data1.renderR data1.renderG data1.renderB ];
 v2 = [ data2.renderR data2.renderG data2.renderB ];
+
+tonemap = TonemapCube('square_root.cube');
 
 u1 = srgb(v1);
 t2_hat = tonemap.apply(u1);
@@ -52,13 +49,18 @@ A = A(1:end-1,:);
 B = zeros([ size(A,1) 1]);
 
 LB = -Inf([ nknot 1]);
-LB(1) = 1e-5;
+LB(1) = 1e-8;
 
 UB = Inf([ nknot 1]);
 UB(end) = 1.4;
 
 errfn2 = @(p) errfn(p, u1, v2, tonemap, A, B, LB, UB);
 pinit = tonemap.u_knot(3:19)';
+
+A * pinit <= B
+pinit >= LB
+pinit <= UB
+
 phat = fmincon(errfn2, pinit, A, B, [], [], LB, UB);
 
 tonemap.u_knot(3:19) = phat;

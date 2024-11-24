@@ -7,12 +7,14 @@ using UnityEngine.Rendering.HighDefinition;
 
 public class MainScript : MonoBehaviour
 {
+
     // user-configurable rendering parameters
-    [Header("Check for Lambertian material; uncheck for Unlit")]
-    public bool testLambertian;
+    public enum Materials { Lambertian, Unlit }
+    [Header("Choose material type to render")]
+    public Materials materialType;
     [Header("Check to apply tonemapping")]
     public bool testTonemap;
-    [Header("Check for same pseudo-random sequence each run")]
+    [Header("Check to use a fixed pseudo-random sequence")]
     public bool fixedSeed;
     [Header("Check to randomize wider range of properties")]
     public bool randomizeAll;
@@ -27,7 +29,6 @@ public class MainScript : MonoBehaviour
     public Material materialLambertian, materialUnlit;
     public Light directionalLight;
     public Volume volume;
-    GradientSky sky;
 
     // properties of scene objects that we'll set randomly
     Color materialColor, directionalColor, ambientColor;
@@ -35,14 +36,14 @@ public class MainScript : MonoBehaviour
     float directionalIntensity, ambientMultiplier;
 
     // frame counter and trial counter
-    int frame = 0;
-    int trialCount = 0;
+    int frameCount = 0, trialCount = 0;
     
     const int imsize = 4;   // size of region to capture
     Rect readRect;          // rectangle specifying region to capture
     Texture2D tex;          // texture where captured region will be stored
     bool captureRequested = false, captureWaiting = false;
     int captureElapsed, captureWait = 2;
+    GradientSky sky;
 
     string filename;
 
@@ -65,7 +66,7 @@ public class MainScript : MonoBehaviour
 
         // choose the material that we'll test
         Renderer renderer = plane.GetComponent<Renderer>();
-        renderer.material = testLambertian ? materialLambertian : materialUnlit;
+        renderer.material = materialType == Materials.Lambertian ? materialLambertian : materialUnlit;
 
         // turn tonemapping on or off
         volume.sharedProfile.TryGet<Tonemapping>(out Tonemapping tonemap);
@@ -77,7 +78,7 @@ public class MainScript : MonoBehaviour
 
         // create filename
         filename = "../data";
-        filename += testLambertian ? "_L1" : "_L0";
+        filename += materialType == Materials.Lambertian ? "_L1" : "_L0";
         filename += testTonemap ? "_T1" : "_T0";
         filename += fixedSeed ? "_F1" : "_F0";
         filename += randomizeAll ? "_A1" : "_A0";
@@ -93,7 +94,7 @@ public class MainScript : MonoBehaviour
     void Update()
     {
         // skip frames during an initial period
-        if (++frame < 30)
+        if (++frameCount < 30)
             return;
 
         if (captureRequested)
@@ -125,7 +126,7 @@ public class MainScript : MonoBehaviour
 
         // plane color and orientation
         materialColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-        if (testLambertian)
+        if (materialType == Materials.Lambertian)
             materialLambertian.SetColor("_BASE_COLOR", materialColor);
         else
             materialUnlit.color = materialColor;
