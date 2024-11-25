@@ -21,7 +21,7 @@ public class MainScript : MonoBehaviour
     [Header("Number of random samples to render")]
     public int samples;
     [Header("Maximum rendered value u_k (Lambertian only)")]
-    public int max_uk;
+    public float max_uk;
 
     // scene objects
     [Header("Links to scene objects")]
@@ -31,12 +31,19 @@ public class MainScript : MonoBehaviour
     public Volume volume;
 
     // properties of scene objects that we'll set randomly
-    Color materialColor, directionalColor, ambientColor;
-    Vector3 planeNormal, lightDir;
-    float directionalIntensity, ambientMultiplier;
+    // - here I use the same variable names as in the paper
+    // - this makes them less readable at first, but in the long run makes
+    //   it easier to map them onto the content of the paper
+    Color m;    // material color
+    Vector3 n;  // plane surface normal
+    Color d;    // directional light color
+    Vector3 l;  // directional light direction
+    float i_d;  // directional light intensity
+    Color a;    // ambient light color
+    float i_a;  // ambient light intensity
 
     // frame counter and trial counter
-    int frameCount = 0, trialCount = 0;
+    int frameCount = 0, sampleNumber = 0;
     
     const int imsize = 4;   // size of region to capture
     Rect readRect;          // rectangle specifying region to capture
@@ -88,7 +95,7 @@ public class MainScript : MonoBehaviour
 
         // write header to data file
         using (StreamWriter writer = new StreamWriter(filename, append: false))
-            writer.WriteLine("trialCount,planeColorR,planeColorG,planeColorB,planeNormalX,planeNormalY,planeNormalZ,lightDirX,lightDirY,lightDirZ,directionalIntensity,directionalColorR,directionalColorG,directionalColorB,ambientMultiplier,ambientColorR,ambientColorG,ambientColorB,renderR,renderG,renderB");
+            writer.WriteLine("sampleNumber,m_r,m_g,m_b,n_x,n_y,n_z,l_x,l_y,l_z,i_d,d_r,d_g,d_b,i_a,a_r,a_g,a_b,v_r,v_g,v_b");
     }
 
     void Update()
@@ -103,50 +110,78 @@ public class MainScript : MonoBehaviour
                 return;
 
             // convert captured region to Color values
-            Color[] pix = tex.GetPixels();
+            Color[] v = tex.GetPixels();
 
             // save results to file
-            string line = $"{trialCount}";
-            line += $",{materialColor.r:F6},{materialColor.g:F6},{materialColor.b:F6}";
-            line += $",{planeNormal.x:F6},{planeNormal.y:F6},{planeNormal.z:F6}";
-            line += $",{lightDir.x:F6},{lightDir.y:F6},{lightDir.z:F6}";
-            line += $",{directionalIntensity:F6},{directionalColor.r:F6},{directionalColor.g:F6},{directionalColor.b:F6}";
-            line += $",{ambientMultiplier:F6},{ambientColor.r:F6},{ambientColor.g:F6},{ambientColor.b:F6}";
-            line += $",{pix[0].r:F6},{pix[0].g:F6},{pix[0].b:F6}";
+            string line = $"{sampleNumber}";            // sample number
+            line += $",{m.r:F6},{m.g:F6},{m.b:F6}";     // material color
+            line += $",{n.x:F6},{n.y:F6},{n.z:F6}";     // plane surface normal
+            line += $",{l.x:F6},{l.y:F6},{l.z:F6}";           // directional light direction
+            line += $",{i_d:F6},{d.r:F6},{d.g:F6},{d.b:F6}";  // directional light intensity and color
+            line += $",{i_a:F6},{a.r:F6},{a.g:F6},{a.b:F6}";  // ambient light intensity and color
+            line += $",{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";  // post-processed rendered color
             using (StreamWriter writer = new StreamWriter(filename, append: true))
                 writer.WriteLine(line);
 
             captureWaiting = false;
 
-            if (trialCount == samples)
+            if (sampleNumber == samples)
                 Quit();
         }
 
-        // set new stimulus properties
+        // choose random stimulus properties
+
+        // plane color and normal vector
+        m = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        n = RandomUnitVector3();
+
+        // directional light color and direction
+        d = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        l = RandomUnitVector3();
+
+        // ambient light color
+        a = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+
+        // choose light intensities so that the largest rendered color
+        // coordinate u_k has a target value, randomly chosen on [0, max_uk]
+        float target_uk = Random.Range(0f, max_uk);
+        float proportion_directional = Random.Range(0f, 1f);
+        float illum = target_uk / (0.822f * Mathf.Max(m.r, m.g, m.b));
+        float illum_d = proportion_directional * illum;
+        float illum_a = (1 - proportion_directional) * illum;
+        float d_max = Mathf.Max(d.r, d.g, d.b);
+        float a_max = Mathf.Max(a.r, a.g, a.b);
+        float costheta = Vector3.Dot(n, l);
+        i_d = illum_d / ( sRGBfn.sRGB(d_max) * Mathf.Max(costheta, 0) / Mathf.PI );
+        i_a = illum_a / a_max;
+        //float lighti = target_uk / (2f * 0.822f);
+        //i_d = Random.Range(0f, Mathf.PI * lighti);
+        //i_a = Random.Range(0f, lighti);
+
+        // assign stimulus properties to objects
 
         // plane color and orientation
-        materialColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         if (materialType == Materials.Lambertian)
-            materialLambertian.SetColor("_BASE_COLOR", materialColor);
+            materialLambertian.SetColor("_BASE_COLOR", m);
         else
-            materialUnlit.color = materialColor;
-        planeNormal = RandomUnitVector3();
-        plane.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 1f, 0f), planeNormal);
+            materialUnlit.color = m;
+        plane.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 1f, 0f), n);
 
         // directional light color, intensity, and direction
-        directionalColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-        directionalLight.color = directionalColor;
-        directionalLight.intensity = directionalIntensity = Random.Range(0f, Mathf.PI * 1.2f);
-        lightDir = RandomUnitVector3();
-        directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), lightDir);
+        directionalLight.color = d;
+        directionalLight.intensity = i_d;
+        directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), l);
+        // using Quaternion.FromToRotation(), we can assign the lighting direction
+        // using the direction vector l instead of Euler angles; the default
+        // lighting direction is (0, 0, -1), so we find the rotation that maps
+        // that to l.
 
         // ambient light color and intensity
-        ambientColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-        sky.top.value = sky.middle.value = sky.bottom.value = ambientColor;
-        sky.multiplier.value = ambientMultiplier = Random.Range(0f, 1.2f);
+        sky.top.value = sky.middle.value = sky.bottom.value = a;
+        sky.multiplier.value = i_a;
 
         // start a capture request        
-        ++trialCount;
+        ++sampleNumber;
         captureRequested = captureWaiting = true;
         captureElapsed = 0;
     }
@@ -174,6 +209,11 @@ public class MainScript : MonoBehaviour
         // copy pixels from framebuffer into texture
         tex.ReadPixels(readRect, 0, 0, recalculateMipMaps: false);
         captureWaiting = false;
+    }
+
+    float colormax(Color c)
+    {
+        return Mathf.Max(c.r, c.g, c.b);
     }
 
     void OnDestroy()

@@ -6,8 +6,8 @@ classdef TonemapCube < handle
         % u_knot = [ 0 1e-9 0.0002592 0.003121 0.007183 0.01271 0.02033 0.03056 0.04461 0.06358 0.08881 0.1241 0.1699 0.2346 0.3210 0.4384 0.5995 0.8069 1.107 1.498 2.039 2.766 3.760 5.072 6.871 9.398 12.65 17.25 23.25 31.41 43.01 57.74 ];
         u_knot = [ 0 1e-09 1.355e-05 0.003138 0.007366 0.01298 0.02089 0.03124 0.04545 0.06475 0.09134 0.1263 0.1741 0.2388 0.3312 0.4477 0.6092 0.8301 1.106 1.498 2.039 2.766 3.76 5.072 6.871 9.398 12.65 17.25 23.25 31.41 43.01 57.74 ];
         
-        % 3D arrays of RGB coordinates
-        coordR, coordG, coordB
+        % % 3D arrays of RGB coordinates
+        % coordR, coordG, coordB
         
         % 3D arrays of RGB values
         cubeR, cubeG, cubeB
@@ -60,7 +60,7 @@ classdef TonemapCube < handle
             obj.cubeR = reshape(mat(:,1),[n n n]);
             obj.cubeG = reshape(mat(:,2),[n n n]);
             obj.cubeB = reshape(mat(:,3),[n n n]);
-            obj.makecoord;
+            % obj.makecoord;
         end
         
         % save a .cube file
@@ -96,7 +96,7 @@ classdef TonemapCube < handle
             if nargin >= 2
                 obj.u_knot = u_knot;
             end
-            [obj.coordR,obj.coordG,obj.coordB] = ndgrid(obj.u_knot);
+            % [obj.coordR,obj.coordG,obj.coordB] = ndgrid(obj.u_knot);
         end
         
         % apply tonemapping to rendered values u_k
@@ -105,9 +105,12 @@ classdef TonemapCube < handle
                 error('u_k must be an m x 3 array');
             end
             u_k = max(min(u_k,obj.u_knot(end)),obj.u_knot(3));
-            t_r = interpn(obj.coordR,obj.coordG,obj.coordB,obj.cubeR,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
-            t_g = interpn(obj.coordR,obj.coordG,obj.coordB,obj.cubeG,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
-            t_b = interpn(obj.coordR,obj.coordG,obj.coordB,obj.cubeB,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
+            % t_r = interpn(obj.coordR,obj.coordG,obj.coordB,obj.cubeR,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
+            % t_g = interpn(obj.coordR,obj.coordG,obj.coordB,obj.cubeG,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
+            % t_b = interpn(obj.coordR,obj.coordG,obj.coordB,obj.cubeB,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
+            t_r = interpn(obj.u_knot,obj.u_knot,obj.u_knot,obj.cubeR,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
+            t_g = interpn(obj.u_knot,obj.u_knot,obj.u_knot,obj.cubeG,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
+            t_b = interpn(obj.u_knot,obj.u_knot,obj.u_knot,obj.cubeB,u_k(:,1),u_k(:,2),u_k(:,3),obj.method);
             t_k = [t_r t_g t_b];
         end
 
