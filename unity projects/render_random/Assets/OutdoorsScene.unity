@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.00079917925, g: 0.09729005, b: 0.1055298, a: 1}
+  m_IndirectSpecularColor: {r: 0.014274599, g: 0.04013062, b: 0.038970955, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -731,11 +731,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   materialType: 0
-  testTonemap: 0
+  testTonemap: 1
   fixedSeed: 0
   randomizeAll: 1
-  samples: 5000
-  max_uk: 0.5
+  samples: 1000
+  max_uk: 1
   plane: {fileID: 850274521}
   materialLambertian: {fileID: 2100000, guid: a109c283f1bf4413184e41de09b14b17, type: 2}
   materialUnlit: {fileID: 2100000, guid: a5fc51b942020473db22dc8fad39df31, type: 2}
@@ -794,7 +794,7 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1823688467}
+  - {fileID: 850274525}
+  - {fileID: 1797693913}
   - {fileID: 2013410475}
   - {fileID: 930120582}
-  - {fileID: 1797693913}
-  - {fileID: 850274525}

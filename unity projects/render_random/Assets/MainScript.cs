@@ -43,16 +43,18 @@ public class MainScript : MonoBehaviour
     float i_a;  // ambient light intensity
 
     // frame counter and trial counter
-    int frameCount = 0, sampleNumber = 0;
+    int frameCount = 0, frameWait = 30;
+    int sampleNumber = 1;
     
     const int imsize = 4;   // size of region to capture
     Rect readRect;          // rectangle specifying region to capture
     Texture2D tex;          // texture where captured region will be stored
-    bool captureRequested = false, captureWaiting = false;
+    bool captureWaiting = false;
     int captureElapsed, captureWait = 2;
     GradientSky sky;
 
     string filename;
+    StreamWriter writer;
 
     void Start()
     {
@@ -94,8 +96,8 @@ public class MainScript : MonoBehaviour
         filename += ".txt";
 
         // write header to data file
-        using (StreamWriter writer = new StreamWriter(filename, append: false))
-            writer.WriteLine("sampleNumber,m_r,m_g,m_b,n_x,n_y,n_z,l_x,l_y,l_z,i_d,d_r,d_g,d_b,i_a,a_r,a_g,a_b,v_r,v_g,v_b");
+        writer = new StreamWriter(filename, append: false);
+        writer.WriteLine("sampleNumber,m_r,m_g,m_b,n_x,n_y,n_z,l_x,l_y,l_z,i_d,d_r,d_g,d_b,i_a,a_r,a_g,a_b,v_r,v_g,v_b");
     }
 
     void Update()
@@ -104,30 +106,45 @@ public class MainScript : MonoBehaviour
         if (++frameCount < 30)
             return;
 
-        if (captureRequested)
-        {
-            if (captureWaiting)
-                return;
+        // set random stimulus properties and request first capture
+        if (frameCount == frameWait)
+            StimNext();
 
-            // convert captured region to Color values
-            Color[] v = tex.GetPixels();
+        // keep waiting if a request is active
+        if (captureWaiting)
+            return;
 
-            // save results to file
-            string line = $"{sampleNumber}";            // sample number
-            line += $",{m.r:F6},{m.g:F6},{m.b:F6}";     // material color
-            line += $",{n.x:F6},{n.y:F6},{n.z:F6}";     // plane surface normal
-            line += $",{l.x:F6},{l.y:F6},{l.z:F6}";           // directional light direction
-            line += $",{i_d:F6},{d.r:F6},{d.g:F6},{d.b:F6}";  // directional light intensity and color
-            line += $",{i_a:F6},{a.r:F6},{a.g:F6},{a.b:F6}";  // ambient light intensity and color
-            line += $",{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";  // post-processed rendered color
-            using (StreamWriter writer = new StreamWriter(filename, append: true))
-                writer.WriteLine(line);
+        // save scene parameters and captured color coordinates to file
+        Color[] v = tex.GetPixels();
+        string line = $"{sampleNumber}";            // sample number
+        line += $",{m.r:F6},{m.g:F6},{m.b:F6}";     // material color
+        line += $",{n.x:F6},{n.y:F6},{n.z:F6}";     // plane surface normal
+        line += $",{l.x:F6},{l.y:F6},{l.z:F6}";           // directional light direction
+        line += $",{i_d:F6},{d.r:F6},{d.g:F6},{d.b:F6}";  // directional light intensity and color
+        line += $",{i_a:F6},{a.r:F6},{a.g:F6},{a.b:F6}";  // ambient light intensity and color
+        line += $",{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";  // post-processed rendered color
+        writer.WriteLine(line);
 
-            captureWaiting = false;
+        /// set random stimulus properties and request capture
+        if (!StimNext())
+            Quit();
 
-            if (sampleNumber == samples)
-                Quit();
-        }
+    }
+
+    Vector3 RandomUnitVector3()
+    {
+        float azimuth = Random.Range(0f, 2 * Mathf.PI);
+        float declination = Random.Range(-(60f / 180f) * Mathf.PI, (60f / 180f) * Mathf.PI);
+        return new Vector3(Mathf.Sin(declination)*Mathf.Cos(azimuth),
+                           Mathf.Sin(declination) * Mathf.Sin(azimuth),
+                           -Mathf.Cos(declination));
+    }
+
+    bool StimNext()
+    {
+        // if we have enough samples, then quit
+        if (++sampleNumber > samples)
+            return false;
 
         // choose random stimulus properties
 
@@ -149,14 +166,11 @@ public class MainScript : MonoBehaviour
         float illum = target_uk / (0.822f * Mathf.Max(m.r, m.g, m.b));
         float illum_d = proportion_directional * illum;
         float illum_a = (1 - proportion_directional) * illum;
-        float d_max = Mathf.Max(d.r, d.g, d.b);
+        float d_max = Mathf.Max(d.r, d.g, d.b); // not correct to take max of d and a independently
         float a_max = Mathf.Max(a.r, a.g, a.b);
         float costheta = Vector3.Dot(n, l);
-        i_d = illum_d / ( sRGBfn.sRGB(d_max) * Mathf.Max(costheta, 0) / Mathf.PI );
+        i_d = illum_d / (sRGBfn.sRGB(d_max) * Mathf.Max(costheta, 0) / Mathf.PI);
         i_a = illum_a / a_max;
-        //float lighti = target_uk / (2f * 0.822f);
-        //i_d = Random.Range(0f, Mathf.PI * lighti);
-        //i_a = Random.Range(0f, lighti);
 
         // assign stimulus properties to objects
 
@@ -171,28 +185,16 @@ public class MainScript : MonoBehaviour
         directionalLight.color = d;
         directionalLight.intensity = i_d;
         directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), l);
-        // using Quaternion.FromToRotation(), we can assign the lighting direction
-        // using the direction vector l instead of Euler angles; the default
-        // lighting direction is (0, 0, -1), so we find the rotation that maps
-        // that to l.
 
         // ambient light color and intensity
         sky.top.value = sky.middle.value = sky.bottom.value = a;
         sky.multiplier.value = i_a;
 
         // start a capture request        
-        ++sampleNumber;
-        captureRequested = captureWaiting = true;
+        captureWaiting = true;
         captureElapsed = 0;
-    }
 
-    Vector3 RandomUnitVector3()
-    {
-        float azimuth = Random.Range(0f, 2 * Mathf.PI);
-        float declination = Random.Range(-(60f / 180f) * Mathf.PI, (60f / 180f) * Mathf.PI);
-        return new Vector3(Mathf.Sin(declination)*Mathf.Cos(azimuth),
-                           Mathf.Sin(declination) * Mathf.Sin(azimuth),
-                           -Mathf.Cos(declination));
+        return true;
     }
 
     void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -200,7 +202,7 @@ public class MainScript : MonoBehaviour
         if (camera != Camera.main)  // don't capture pixels if this is the wrong camera
             return;
 
-        if (!(captureRequested && captureWaiting))  // don't capture pixels if there isn't an active request
+        if (!captureWaiting)  // don't capture pixels if there isn't an active request
             return;
 
         if (++captureElapsed < captureWait)  // don't capture pixels until we've waited a few frames after the request

@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -11,131 +8,137 @@ public class MainScript : MonoBehaviour
 {
 
     public Light dirlight;
-
     public Volume globalVolume;
-    Texture3DParameter texparam;
-    int delta = 1, phase = 0, framei = 0;
+
+    int frameCount = 0, frameWait = 30;
+
+    int delta = 1;
+    Texture3DParameter lutTexture;
 
     const float light_min = 1e-4f, light_max = 400f, light_increment = 1.01f;
-    float light_intensity;
+    float i_d;
 
-    float plane_grey_out = -1f;
+    const int imsize = 4;   // size of region to capture
+    Rect readRect;          // rectangle specifying region to capture
+    Texture2D tex;          // texture where captured region will be stored
+    bool captureWaiting = false;
+    int captureElapsed, captureWait = 2;
 
-    StreamWriter sr;
-
-    WaitForEndOfFrame frameEnd = new WaitForEndOfFrame();
-    int startx, starty;
+    string filename = "../render_delta.txt";
+    StreamWriter writer;
 
     void Start() {
 
-        startx = Screen.width / 2;
-        starty = Screen.height / 2;
+        // get coordinates of region to capture
+        int x0 = (Screen.width / 2) - (imsize / 2);
+        int y0 = (Screen.height / 2) - (imsize / 2);
+        readRect = new Rect(x0, y0, imsize, imsize);
+
+        // create texture object where capture will be stored
+        tex = new Texture2D(imsize, imsize, TextureFormat.RGB24, mipChain: false);
+
+        // add post-rendering callback
+        RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 
         globalVolume.sharedProfile.TryGet<Tonemapping>(out var tmap);
-        texparam = tmap.lutTexture;
+        lutTexture = tmap.lutTexture;
 
-        sr = System.IO.File.CreateText("../render_delta.txt");
-        sr.WriteLine("delta,light_intensity,grey_out");
+        writer = new StreamWriter(filename, append: false);
+        writer.WriteLine("delta,i_d,v_r,v_g,v_b");
 
     }
 
     void Update() {
 
-        framei += 1;
-
-        // initial wait
-        if (phase == 0)
-        {
-            if (framei < 5)
-                return;
-
-            phase = 1;
-            light_intensity = light_min;
-            framei = 0;
-            StartCoroutine(Capture());  // need this?
-            SetDelta();
+        // skip frames during an initial period
+        if (++frameCount < frameWait)
             return;
-        }
 
-        // set stimulus property  [ maybe don't need a separate phase? ]
-        if (phase == 1)
-        {
-            if (framei < 1)
-                return;
+        // set initial stimulus properties and request a capture
+        if(frameCount==frameWait)
+            StimFirst();
 
-            dirlight.intensity = light_intensity;
-            phase = 2;
-            framei = 0;
+        // keep waiting if a capture request is active
+        if (captureWaiting)
             return;
-        }
 
-        // start capture of rendered grey level
-        if (phase == 2)
-        {
-            if (framei < 1)
-                return;
+        // save captured color coordinates to file
+        Color[] v = tex.GetPixels();
+        string line = $"{delta},{i_d:F6},{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";
+        writer.WriteLine(line);
 
-            StartCoroutine(Capture());
-            phase = 3;
-            framei = 0;
-            return;
-        }
-
-        // get rendered grey level
-        if (phase == 3)
-        {
-            if (framei < 1)
-                return;
-
-            string dataline = $"{delta},{light_intensity:F9},{plane_grey_out}"; // record red, green, and blue color coordinates
-            sr.WriteLine(dataline);
-
-            light_intensity *= light_increment;
-            if (light_intensity > light_max)
-            {
-                if (++delta > 32)
-                    Finish();
-                else
-                {
-                    SetDelta();
-                    light_intensity = light_min;
-                }
-            }
-            phase = 1;
-            framei = 0;
-            return;
-        }
+        // set next stimulus properties and request a capture
+        if (!StimNext())
+            Quit();
 
     }
 
-    void SetDelta()
+    void StimFirst()
+    {
+        delta = 1;
+        SetDeltaCube();
+        dirlight.intensity = i_d = light_min;
+        captureWaiting = true;
+        captureElapsed = 0;
+    }
+
+    bool StimNext()
+    {
+        i_d *= light_increment;
+        if (i_d > light_max)
+        {
+            if (delta == 32)
+                return false;
+            ++delta;
+            SetDeltaCube();
+            i_d = light_min;
+        }
+        dirlight.intensity = i_d;
+        captureWaiting = true;
+        captureElapsed = 0;
+        return true;
+    }
+
+    void SetDeltaCube()
     {
         string name = $"delta_{delta:D2}";
         string[] cubeguid = AssetDatabase.FindAssets(name);
         string cubepath = AssetDatabase.GUIDToAssetPath(cubeguid[0]);
-        texparam.value = (Texture3D)AssetDatabase.LoadAssetAtPath(cubepath, typeof(Texture3D));
+        lutTexture.value = (Texture3D)AssetDatabase.LoadAssetAtPath(cubepath, typeof(Texture3D));
         Debug.Log(cubepath);
     }
 
-    void Finish()
+    void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
     {
-        sr.Close();
-        UnityEditor.EditorApplication.isPlaying = false;
+        if (camera != Camera.main)  // don't capture pixels if this is the wrong camera
+            return;
+
+        if (!captureWaiting)        // don't capture pixels if there isn't an active request
+            return;
+
+        if (++captureElapsed < captureWait)  // don't capture pixels until we've waited a few frames after the request
+            return;
+
+        // copy pixels from framebuffer into texture
+        tex.ReadPixels(readRect, 0, 0, recalculateMipMaps: false);
+        captureWaiting = false;
     }
 
-    // record greylevel
-    IEnumerator Capture()
+    void OnDestroy()
     {
-        // wait until rendering of a single frame is done
-        yield return frameEnd;
+        RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+    }
 
-        // record greylevel
-        var tex = new Texture2D(1, 1, TextureFormat.RGB24, false); // reuse this?
-        tex.ReadPixels(new Rect(startx, starty, 1, 1), 0, 0);
-        tex.Apply();
-        var pix = tex.GetPixels32();  // process this as floating point
-        Destroy(tex);
-        plane_grey_out = (pix[0].r + pix[0].g + pix[0].b) / 3;
+    void Quit()
+    {
+        writer.Close();
+#if UNITY_EDITOR
+        // quit when running project in editor
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        // quit when running compiled project
+        UnityEngine.Application.Quit();
+#endif
     }
 
 }

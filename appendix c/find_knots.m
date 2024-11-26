@@ -5,12 +5,11 @@ clear; clc; clf;
 % addpath ../tools
 addpath tools
 
-data = readtable('find_knots/data_knots.txt');
+data = readtable('render_delta.txt');
 data = data(data.delta>=3,:);
 data.delta = data.delta - 2;
-data.u_k = 0.822 * data.light_intensity / pi;
-data.v_k = data.grey_out/255;
-data.t_k = srgb(data.v_k);
+data.u_k = 0.822 * data.i_d / pi;
+data.t_k = srgb(data.v_r);
 
 % 1. get initial estimates of peak locations
 
@@ -62,6 +61,7 @@ err_post = errfn(u_knot,data,true)
 fprintf('%.3e ',u_knot);
 fprintf('\n');
 
+hold off
 
 function err = errfn(p, data, plotit)
 
