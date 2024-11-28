@@ -239,7 +239,7 @@ MonoBehaviour:
     m_Value: 0
   multiplier:
     m_OverrideState: 1
-    m_Value: 0.025725804
+    m_Value: 450.10217
   upperHemisphereLuxValue:
     m_OverrideState: 0
     m_Value: 1
@@ -260,13 +260,13 @@ MonoBehaviour:
     m_Value: 0
   top:
     m_OverrideState: 1
-    m_Value: {r: 0.71471226, g: 0.15213895, b: 0.4436913, a: 1}
+    m_Value: {r: 0.7961285, g: 0.592979, b: 0.5966192, a: 1}
   middle:
     m_OverrideState: 1
-    m_Value: {r: 0.71471226, g: 0.15213895, b: 0.4436913, a: 1}
+    m_Value: {r: 0.7961285, g: 0.592979, b: 0.5966192, a: 1}
   bottom:
     m_OverrideState: 1
-    m_Value: {r: 0.71471226, g: 0.15213895, b: 0.4436913, a: 1}
+    m_Value: {r: 0.7961285, g: 0.592979, b: 0.5966192, a: 1}
   gradientDiffusion:
     m_OverrideState: 0
     m_Value: 1
@@ -285,7 +285,7 @@ MonoBehaviour:
   active: 1
   mode:
     m_OverrideState: 1
-    m_Value: 4
+    m_Value: 0
   useFullACES:
     m_OverrideState: 0
     m_Value: 0

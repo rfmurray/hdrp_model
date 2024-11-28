@@ -10,9 +10,19 @@ public class sRGBfn
         return x < X ? x / Phi : Mathf.Pow((x + A) / (1 + A), Gamma);
     }
 
+    public static Color sRGB(Color c)
+    {
+        return new Color(sRGB(c.r), sRGB(c.g), sRGB(c.b));
+    }
+
     public static float sRGBinv(float y)
     {
         return y < Y ? y * Phi : Mathf.Pow(y, 1 / Gamma) * (1 + A) - A;
+    }
+
+    public static Color sRGBinv(Color c)
+    {
+        return new Color(sRGBinv(c.r), sRGBinv(c.g), sRGBinv(c.b));
     }
 
 }

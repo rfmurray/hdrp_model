@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -14,14 +12,8 @@ public class MainScript : MonoBehaviour
     public Materials materialType;
     [Header("Check to apply tonemapping")]
     public bool testTonemap;
-    [Header("Check to use a fixed pseudo-random sequence")]
-    public bool fixedSeed;
-    [Header("Check to randomize wider range of properties")]
-    public bool randomizeAll;
     [Header("Number of random samples to render")]
     public int samples;
-    [Header("Maximum rendered value u_k (Lambertian only)")]
-    public float max_uk;
 
     // scene objects
     [Header("Links to scene objects")]
@@ -41,10 +33,11 @@ public class MainScript : MonoBehaviour
     float i_d;  // directional light intensity
     Color a;    // ambient light color
     float i_a;  // ambient light intensity
+    float e;    // exposure (not randomized)
 
     // frame counter and trial counter
     int frameCount = 0, frameWait = 30;
-    int sampleNumber = 1;
+    int sampleNumber = 0;
     
     const int imsize = 4;   // size of region to capture
     Rect readRect;          // rectangle specifying region to capture
@@ -53,7 +46,6 @@ public class MainScript : MonoBehaviour
     int captureElapsed, captureWait = 2;
     GradientSky sky;
 
-    string filename;
     StreamWriter writer;
 
     void Start()
@@ -70,8 +62,12 @@ public class MainScript : MonoBehaviour
         RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 
         // get gradient sky object
-        volume.sharedProfile.TryGet<GradientSky>(out GradientSky tmpsky);
-        sky = tmpsky;
+        volume.sharedProfile.TryGet<GradientSky>(out GradientSky tmpSky);
+        sky = tmpSky;
+
+        // get fixed exposure level
+        volume.sharedProfile.TryGet<Exposure>(out Exposure tmpExposure);
+        e = tmpExposure.fixedExposure.value;
 
         // choose the material that we'll test
         Renderer renderer = plane.GetComponent<Renderer>();
@@ -82,22 +78,18 @@ public class MainScript : MonoBehaviour
         tonemap.mode.Override(testTonemap ? TonemappingMode.External : TonemappingMode.None);
 
         // seed rng
-        int rngseed = fixedSeed ? 0 : (int)System.DateTime.Now.Ticks;
+        int rngseed = (int)System.DateTime.Now.Ticks;
         Random.InitState(rngseed);
 
         // create filename
-        filename = "../data";
+        string filename = "../data";
         filename += materialType == Materials.Lambertian ? "_L1" : "_L0";
         filename += testTonemap ? "_T1" : "_T0";
-        filename += fixedSeed ? "_F1" : "_F0";
-        filename += randomizeAll ? "_A1" : "_A0";
-        filename += $"_S{samples:D5}";
-        filename += $"_M{max_uk:F0}";
         filename += ".txt";
 
         // write header to data file
         writer = new StreamWriter(filename, append: false);
-        writer.WriteLine("sampleNumber,m_r,m_g,m_b,n_x,n_y,n_z,l_x,l_y,l_z,i_d,d_r,d_g,d_b,i_a,a_r,a_g,a_b,v_r,v_g,v_b");
+        writer.WriteLine("sampleNumber,e,m_r,m_g,m_b,n_x,n_y,n_z,l_x,l_y,l_z,i_d,d_r,d_g,d_b,i_a,a_r,a_g,a_b,v_r,v_g,v_b");
     }
 
     void Update()
@@ -115,8 +107,9 @@ public class MainScript : MonoBehaviour
             return;
 
         // save scene parameters and captured color coordinates to file
-        Color[] v = tex.GetPixels();
+        Color[] v = tex.GetPixels();                // 'tex' was captured in the OnEndCameraRendering callback
         string line = $"{sampleNumber}";            // sample number
+        line += $",{e:F6}";                         // exposure
         line += $",{m.r:F6},{m.g:F6},{m.b:F6}";     // material color
         line += $",{n.x:F6},{n.y:F6},{n.z:F6}";     // plane surface normal
         line += $",{l.x:F6},{l.y:F6},{l.z:F6}";           // directional light direction
@@ -125,17 +118,22 @@ public class MainScript : MonoBehaviour
         line += $",{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";  // post-processed rendered color
         writer.WriteLine(line);
 
-        /// set random stimulus properties and request capture
+        // set random stimulus properties and request next capture
         if (!StimNext())
             Quit();
 
     }
 
-    Vector3 RandomUnitVector3()
+    Color RandomColor()
+    {
+        return new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+    }
+
+    Vector3 RandomUnitVector3(float maxDeclination = 60f)
     {
         float azimuth = Random.Range(0f, 2 * Mathf.PI);
-        float declination = Random.Range(-(60f / 180f) * Mathf.PI, (60f / 180f) * Mathf.PI);
-        return new Vector3(Mathf.Sin(declination)*Mathf.Cos(azimuth),
+        float declination = Random.Range(0f, (maxDeclination / 180f) * Mathf.PI);
+        return new Vector3(Mathf.Sin(declination) * Mathf.Cos(azimuth),
                            Mathf.Sin(declination) * Mathf.Sin(azimuth),
                            -Mathf.Cos(declination));
     }
@@ -147,30 +145,13 @@ public class MainScript : MonoBehaviour
             return false;
 
         // choose random stimulus properties
-
-        // plane color and normal vector
-        m = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-        n = RandomUnitVector3();
-
-        // directional light color and direction
-        d = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-        l = RandomUnitVector3();
-
-        // ambient light color
-        a = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-
-        // choose light intensities so that the largest rendered color
-        // coordinate u_k has a target value, randomly chosen on [0, max_uk]
-        float target_uk = Random.Range(0f, max_uk);
-        float proportion_directional = Random.Range(0f, 1f);
-        float illum = target_uk / (0.822f * Mathf.Max(m.r, m.g, m.b));
-        float illum_d = proportion_directional * illum;
-        float illum_a = (1 - proportion_directional) * illum;
-        float d_max = Mathf.Max(d.r, d.g, d.b); // not correct to take max of d and a independently
-        float a_max = Mathf.Max(a.r, a.g, a.b);
-        float costheta = Vector3.Dot(n, l);
-        i_d = illum_d / (sRGBfn.sRGB(d_max) * Mathf.Max(costheta, 0) / Mathf.PI);
-        i_a = illum_a / a_max;
+        m = RandomColor();        // plane color
+        n = RandomUnitVector3();  // plane normal vector
+        d = RandomColor();        // directional light color
+        l = RandomUnitVector3();  // directional light direction
+        a = RandomColor();        // ambient light color
+        i_d = Random.Range(0f, Mathf.PI * 3f) * Mathf.Pow(2f, e);  // directional light intensity; scale with exposure so we get reasonable rendered values
+        i_a = Random.Range(0f, 3f) * Mathf.Pow(2f, e);             // ambient light intensity
 
         // assign stimulus properties to objects
 
@@ -179,12 +160,12 @@ public class MainScript : MonoBehaviour
             materialLambertian.SetColor("_BASE_COLOR", m);
         else
             materialUnlit.color = m;
-        plane.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 1f, 0f), n);
+        plane.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 1f, 0f), n);  // default plane normal is (0, 1, 0)
 
         // directional light color, intensity, and direction
         directionalLight.color = d;
         directionalLight.intensity = i_d;
-        directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), l);
+        directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), l);  // default lighting direction is (0, 0, -1)
 
         // ambient light color and intensity
         sky.top.value = sky.middle.value = sky.bottom.value = a;
@@ -213,11 +194,6 @@ public class MainScript : MonoBehaviour
         captureWaiting = false;
     }
 
-    float colormax(Color c)
-    {
-        return Mathf.Max(c.r, c.g, c.b);
-    }
-
     void OnDestroy()
     {
         RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
@@ -225,6 +201,7 @@ public class MainScript : MonoBehaviour
 
     void Quit()
     {
+        writer.Close();
 #if UNITY_EDITOR
         // quit when running project in editor
         UnityEditor.EditorApplication.isPlaying = false;
