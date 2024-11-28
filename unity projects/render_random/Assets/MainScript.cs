@@ -7,9 +7,8 @@ public class MainScript : MonoBehaviour
 {
 
     // user-configurable rendering parameters
-    public enum Materials { Lambertian, Unlit }
-    [Header("Choose material type to render")]
-    public Materials materialType;
+    [Header("Check to render Lambertian material; uncheck for Unlit")]
+    public bool testLambertian;
     [Header("Check to apply tonemapping")]
     public bool testTonemap;
     [Header("Number of random samples to render")]
@@ -33,7 +32,7 @@ public class MainScript : MonoBehaviour
     float i_d;  // directional light intensity
     Color a;    // ambient light color
     float i_a;  // ambient light intensity
-    float e;    // exposure (not randomized)
+    float e;    // exposure
 
     // frame counter and trial counter
     int frameCount = 0, frameWait = 30;
@@ -45,6 +44,7 @@ public class MainScript : MonoBehaviour
     bool captureWaiting = false;
     int captureElapsed, captureWait = 2;
     GradientSky sky;
+    Exposure exposure;
 
     StreamWriter writer;
 
@@ -65,13 +65,13 @@ public class MainScript : MonoBehaviour
         volume.sharedProfile.TryGet<GradientSky>(out GradientSky tmpSky);
         sky = tmpSky;
 
-        // get fixed exposure level
+        // get exposure object
         volume.sharedProfile.TryGet<Exposure>(out Exposure tmpExposure);
-        e = tmpExposure.fixedExposure.value;
+        exposure = tmpExposure;
 
         // choose the material that we'll test
         Renderer renderer = plane.GetComponent<Renderer>();
-        renderer.material = materialType == Materials.Lambertian ? materialLambertian : materialUnlit;
+        renderer.material = testLambertian ? materialLambertian : materialUnlit;
 
         // turn tonemapping on or off
         volume.sharedProfile.TryGet<Tonemapping>(out Tonemapping tonemap);
@@ -83,7 +83,7 @@ public class MainScript : MonoBehaviour
 
         // create filename
         string filename = "../data";
-        filename += materialType == Materials.Lambertian ? "_L1" : "_L0";
+        filename += testLambertian ? "_L1" : "_L0";
         filename += testTonemap ? "_T1" : "_T0";
         filename += ".txt";
 
@@ -131,8 +131,9 @@ public class MainScript : MonoBehaviour
 
     Vector3 RandomUnitVector3(float maxDeclination = 60f)
     {
-        float azimuth = Random.Range(0f, 2 * Mathf.PI);
-        float declination = Random.Range(0f, (maxDeclination / 180f) * Mathf.PI);
+        // use inverse transform sampling to get uniformly distributed points on the sphere
+        float azimuth = Random.Range(0f, 2f * Mathf.PI);
+        float declination = Mathf.Acos(1 + Random.Range(0f, 1f) * (Mathf.Cos((Mathf.PI / 180f) * maxDeclination) - 1));
         return new Vector3(Mathf.Sin(declination) * Mathf.Cos(azimuth),
                            Mathf.Sin(declination) * Mathf.Sin(azimuth),
                            -Mathf.Cos(declination));
@@ -145,18 +146,19 @@ public class MainScript : MonoBehaviour
             return false;
 
         // choose random stimulus properties
-        m = RandomColor();        // plane color
-        n = RandomUnitVector3();  // plane normal vector
-        d = RandomColor();        // directional light color
-        l = RandomUnitVector3();  // directional light direction
-        a = RandomColor();        // ambient light color
+        m = RandomColor();           // plane color
+        n = RandomUnitVector3();     // plane normal vector
+        d = RandomColor();           // directional light color
+        l = RandomUnitVector3();     // directional light direction
+        a = RandomColor();           // ambient light color
+        e = Random.Range(-5f, 10f);  // exposure
         i_d = Random.Range(0f, Mathf.PI * 3f) * Mathf.Pow(2f, e);  // directional light intensity; scale with exposure so we get reasonable rendered values
         i_a = Random.Range(0f, 3f) * Mathf.Pow(2f, e);             // ambient light intensity
 
         // assign stimulus properties to objects
 
         // plane color and orientation
-        if (materialType == Materials.Lambertian)
+        if (testLambertian)
             materialLambertian.SetColor("_BASE_COLOR", m);
         else
             materialUnlit.color = m;
@@ -165,11 +167,14 @@ public class MainScript : MonoBehaviour
         // directional light color, intensity, and direction
         directionalLight.color = d;
         directionalLight.intensity = i_d;
-        directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), l);  // default lighting direction is (0, 0, -1)
+        directionalLight.transform.rotation = Quaternion.FromToRotation(new Vector3(0f, 0f, -1f), l);  // default lighting direction is (0, 0, -1) (here we require l indicates the direction light is coming from, not the direction it's going to)
 
         // ambient light color and intensity
         sky.top.value = sky.middle.value = sky.bottom.value = a;
         sky.multiplier.value = i_a;
+
+        // exposure
+        exposure.fixedExposure.value = e;
 
         // start a capture request        
         captureWaiting = true;
