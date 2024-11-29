@@ -3,7 +3,7 @@
 
 clear; clc;
 
-addpath tools
+addpath hdrp_tools
 
 % choose whether to test results from model_test Unity project with
 % Lambertian or unlit material
@@ -80,7 +80,7 @@ plot(xlim,(1/255)*[ 1 1 ],'k-');
 hold off
 box on
 axis square
-axis([ xlim (5/255)*[ -1 1 ] ]);
+% axis([ xlim (5/255)*[ -1 1 ] ]);
 xlabel 'actual v_k'
 ylabel 'prediction error for v_k'
 legend(h, 'red channel', 'green channel', 'blue channel', 'location', 'northwest', 'box', 'off');
