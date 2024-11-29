@@ -1,10 +1,10 @@
 import numpy as np
 
-Phi = 12.9232102
+Phi = 12.92
 Gamma = 2.4
 A = 0.055
-X = 0.0392857
-Y = 0.0030399
+X = 0.04045
+Y = 0.0031308
 
 def srgb(x):
     y = np.empty(x.shape)

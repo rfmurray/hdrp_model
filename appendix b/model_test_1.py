@@ -41,7 +41,7 @@ u_hat[k] = np.nan
 
 # plot predicted rendered color coordinates u_k against actual coordinates
 xylim = np.array([0,1.1])
-k = np.random.randint(low=0, high=u.shape[0], size=200)
+k = np.random.randint(low=0, high=u.shape[0], size=100)
 for i in range(3):
     plt.scatter(u[k,i], u_hat[k,i], color='rgb'[i])
 plt.plot(xylim, xylim, 'k-')
@@ -55,6 +55,7 @@ plt.gca().set_aspect(1)
 # find regression slope
 k = ~np.isnan(u)
 r = stats.linregress(u[k], u_hat[k])
+print(r)
 
 # add regression line to plot
 plt.plot(xylim, r.slope*xylim, 'r-')

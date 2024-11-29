@@ -32,7 +32,7 @@ public class MainScript : MonoBehaviour
     float i_d;  // directional light intensity
     Color a;    // ambient light color
     float i_a;  // ambient light intensity
-    float e;    // exposure
+    float e;    // exposure (not randomized)
 
     // frame counter and trial counter
     int frameCount = 0, frameWait = 30;
@@ -44,7 +44,6 @@ public class MainScript : MonoBehaviour
     bool captureWaiting = false;
     int captureElapsed, captureWait = 2;
     GradientSky sky;
-    Exposure exposure;
 
     StreamWriter writer;
 
@@ -67,7 +66,7 @@ public class MainScript : MonoBehaviour
 
         // get exposure object
         volume.sharedProfile.TryGet<Exposure>(out Exposure tmpExposure);
-        exposure = tmpExposure;
+        e = tmpExposure.fixedExposure.value;
 
         // choose the material that we'll test
         Renderer renderer = plane.GetComponent<Renderer>();
@@ -151,9 +150,8 @@ public class MainScript : MonoBehaviour
         d = RandomColor();           // directional light color
         l = RandomUnitVector3();     // directional light direction
         a = RandomColor();           // ambient light color
-        e = Random.Range(-5f, 10f);  // exposure
-        i_d = Random.Range(0f, Mathf.PI * 3f) * Mathf.Pow(2f, e);  // directional light intensity; scale with exposure so we get reasonable rendered values
-        i_a = Random.Range(0f, 3f) * Mathf.Pow(2f, e);             // ambient light intensity
+        i_d = Random.Range(0f, Mathf.PI * 2f) * Mathf.Pow(2f, e);  // directional light intensity; scale with exposure so we get reasonable rendered values
+        i_a = Random.Range(0f, 2f) * Mathf.Pow(2f, e);             // ambient light intensity
 
         // assign stimulus properties to objects
 
@@ -172,9 +170,6 @@ public class MainScript : MonoBehaviour
         // ambient light color and intensity
         sky.top.value = sky.middle.value = sky.bottom.value = a;
         sky.multiplier.value = i_a;
-
-        // exposure
-        exposure.fixedExposure.value = e;
 
         // start a capture request        
         captureWaiting = true;

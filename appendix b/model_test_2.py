@@ -8,7 +8,7 @@ from hdrp import srgb, srgbinv
 
 # choose whether to test results from model_test Unity project with
 # Lambertian or unlit material
-testLambertian = True
+testLambertian = False
 
 # choose whether to test results with or without tonemapping
 testTonemapping = False
@@ -42,6 +42,7 @@ if testLambertian:
 else:
     u_hat = srgb(m)
 
+
 # apply tonemapping
 if testTonemapping:
     t_hat = u_hat  # *** apply tonemapping here
@@ -51,15 +52,18 @@ else:
 # apply inverse sRGB nonlinearity to get post-processed color coordinates v_k
 v_hat = srgbinv(t_hat)
 
+p = (abs(v_hat-v) > 1.5/255).mean()
+print(p)
+
 # plot predicted post-processed color coordinates v_k against actual v_k
-fig = plt.figure(figsize=(12,5))
-ax1 = fig.add_subplot(1,2,1)
+fig = plt.figure(figsize=(13,12))
+ax1 = fig.add_subplot(2,2,1)
 xylim = np.array([0,1.1])
-k = np.random.randint(low=0, high=v.shape[0], size=200)
+k = np.random.randint(low=0, high=v.shape[0], size=50)
 for i in range(3):
     ax1.scatter(v[k,i], v_hat[k,i], color='rgb'[i])
 ax1.plot(xylim, xylim, 'k-')
-ax1.legend(['red channel','green channel','blue channel'], frameon=False)
+ax1.legend(['red channel','green channel','blue channel'], frameon=False, loc='upper left')
 ax1.set_xlabel('actual $v_k$', fontsize=18)
 ax1.set_ylabel('predicted $v_k$', fontsize=18)
 ax1.set_xlim(xylim)
@@ -68,17 +72,52 @@ ax1.set_aspect(1)
 ax1.text(0.85,0.1,'(a)',fontsize=24)
 
 # plot prediction error in v_k against actual v_k
-ax2 = fig.add_subplot(1,2,2)
+ax2 = fig.add_subplot(2,2,2)
 xlim = np.array([0,1])
+k = np.random.randint(low=0, high=v.shape[0], size=200)
 for i in range(3):
     ax2.scatter(v[k,i], v_hat[k,i]-v[k,i], color='rgb'[i])
-ax2.legend(['red channel','green channel','blue channel'], frameon=False)
+ax2.legend(['red channel','green channel','blue channel'], frameon=False, loc='lower right')
 ax2.plot(xlim,(-1/255)*np.ones(2),'k-')
 ax2.plot(xlim,(1/255)*np.ones(2),'k-')
 ax2.set_xlabel('actual $v_k$', fontsize=18)
 ax2.set_ylabel('prediction error', fontsize=18)
 ax2.set_xlim(xlim)
+ax2.set_ylim((-0.020,0.010))
 ax2.set_aspect(1./ax2.get_data_ratio())
-ax2.text(0.85,-0.015,'(b)',fontsize=24)
-plt.savefig('model_test_2.eps')
+ax2.text(0.85,-0.012,'(b)',fontsize=24)
+
+# plot prediction error in v_k against m_k
+ax3 = fig.add_subplot(2,2,3)
+xlim = np.array([0,1])
+for i in range(3):
+    ax3.scatter(m[k,i], v_hat[k,i]-v[k,i], color='rgb'[i])
+ax3.legend(['red channel','green channel','blue channel'], frameon=False, loc='lower right')
+ax3.plot(xlim,(-1/255)*np.ones(2),'k-')
+ax3.plot(xlim,(1/255)*np.ones(2),'k-')
+ax3.set_xlabel('material color $m_k$', fontsize=18)
+ax3.set_ylabel('prediction error', fontsize=18)
+ax3.set_xlim(xlim)
+ax3.set_ylim((-0.020,0.010))
+ax3.set_aspect(1./ax2.get_data_ratio())
+ax3.text(0.85,-0.012,'(c)',fontsize=24)
+
+# plot prediction error in v_k against l_k
+ax4 = fig.add_subplot(2,2,4)
+xlim = np.array([0,1])
+for i in range(3):
+    ax4.scatter(d[k,i], v_hat[k,i]-v[k,i], color='rgb'[i])
+ax4.legend(['red channel','green channel','blue channel'], frameon=False, loc='lower right')
+ax4.plot(xlim,(-1/255)*np.ones(2),'k-')
+ax4.plot(xlim,(1/255)*np.ones(2),'k-')
+ax4.set_xlabel('directional light color $d_k$', fontsize=18)
+ax4.set_ylabel('prediction error', fontsize=18)
+ax4.set_xlim(xlim)
+ax4.set_ylim((-0.020,0.010))
+ax4.set_aspect(1./ax2.get_data_ratio())
+ax4.text(0.85,-0.012,'(c)',fontsize=24)
+
+print(l)
+
+plt.savefig(f'model_test_2_L{int(testLambertian)}_T{int(testTonemapping)}.eps', bbox_inches='tight')
 plt.show()
