@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from tools import srgb, srgbinv
+from hdrp import srgb, srgbinv
 
 # choose whether to test results from model_test Unity project with
 # Lambertian or unlit material
@@ -20,19 +20,19 @@ df = pd.read_csv(fname)
 
 # discard samples that may be maxed out
 k = (df[['v_r','v_g','v_b']] <= 0.99).all(axis=1)
-df = df.loc[k,:]
+df = df[k]
 
-# tranform data frame into numpy arrays for model parameters
-e = df['e'].to_numpy().reshape((-1,1))      # exposure
-m = df[['m_r','m_g','m_b']].to_numpy()      # material color
-d = df[['d_r','d_g','d_b']].to_numpy()      # directional light color
-a = df[['a_r','a_g','a_b']].to_numpy()      # ambient light color
-v = df[['v_r','v_g','v_b']].to_numpy()      # post-processed color
-i_d = df['i_d'].to_numpy().reshape((-1,1))  # directional light intensity
-i_a = df['i_a'].to_numpy().reshape((-1,1))  # directional light intensity
-l = df[['l_x','l_y','l_z']].to_numpy()      # lighting direction
-n = df[['n_x','n_y','n_z']].to_numpy()      # plane normal
-costheta = (l*n).sum(axis=1, keepdims=True)
+# create numpy arrays for model parameters
+e = df['e'].to_numpy().reshape((-1,1))       # exposure
+m = df[['m_r','m_g','m_b']].to_numpy()       # material color
+d = df[['d_r','d_g','d_b']].to_numpy()       # directional light color
+a = df[['a_r','a_g','a_b']].to_numpy()       # ambient light color
+v = df[['v_r','v_g','v_b']].to_numpy()       # post-processed color
+i_d = df['i_d'].to_numpy().reshape((-1,1))   # directional light intensity
+i_a = df['i_a'].to_numpy().reshape((-1,1))   # directional light intensity
+l = df[['l_x','l_y','l_z']].to_numpy()       # lighting direction
+n = df[['n_x','n_y','n_z']].to_numpy()       # plane surface normal
+costheta = (l*n).sum(axis=1, keepdims=True)  # cosine of angle between lighting direction and plane surface normal
 
 # apply Lambertian rendering model to get predicted rendered color
 # coordinates u_k, without rendering scale constant c
@@ -48,32 +48,37 @@ if testTonemapping:
 else:
     t_hat = u_hat
 
-# apply sRGB nonlinearity to get post-processed color coordinates v_k
+# apply inverse sRGB nonlinearity to get post-processed color coordinates v_k
 v_hat = srgbinv(t_hat)
 
-## plot predicted post-processed color coordinates v_k against actual v_k
-#xylim = np.array([0,1.1])
+# plot predicted post-processed color coordinates v_k against actual v_k
+fig = plt.figure(figsize=(12,5))
+ax1 = fig.add_subplot(1,2,1)
+xylim = np.array([0,1.1])
 k = np.random.randint(low=0, high=v.shape[0], size=200)
-#for i in range(3):
-#    plt.scatter(v[k,i], v_hat[k,i], color=['r','g','b'][i])
-#plt.plot(xylim, xylim, 'k-')
-#plt.legend(['red channel','green channel','blue channel'], frameon=False)
-#plt.xlabel('actual v_k', fontsize=18)
-#plt.ylabel('predicted v_k', fontsize=18)
-#plt.xlim(xylim)
-#plt.ylim(xylim)
-#plt.gca().set_aspect(1)
-#plt.show()
+for i in range(3):
+    ax1.scatter(v[k,i], v_hat[k,i], color='rgb'[i])
+ax1.plot(xylim, xylim, 'k-')
+ax1.legend(['red channel','green channel','blue channel'], frameon=False)
+ax1.set_xlabel('actual $v_k$', fontsize=18)
+ax1.set_ylabel('predicted $v_k$', fontsize=18)
+ax1.set_xlim(xylim)
+ax1.set_ylim(xylim)
+ax1.set_aspect(1)
+ax1.text(0.85,0.1,'(a)',fontsize=24)
 
 # plot prediction error in v_k against actual v_k
+ax2 = fig.add_subplot(1,2,2)
 xlim = np.array([0,1])
 for i in range(3):
-    plt.scatter(v[k,i], v_hat[k,i]-v[k,i], color=['r','g','b'][i])
-plt.legend(['red channel','green channel','blue channel'], frameon=False)
-plt.plot(xlim,(-1/255)*np.ones(2),'k-')
-plt.plot(xlim,(1/255)*np.ones(2),'k-')
-plt.xlabel('actual v_k', fontsize=18)
-plt.ylabel('prediction error', fontsize=18)
-plt.xlim(xlim)
-#axis([ xlim (5/255)*[ -1 1 ] ]);
+    ax2.scatter(v[k,i], v_hat[k,i]-v[k,i], color='rgb'[i])
+ax2.legend(['red channel','green channel','blue channel'], frameon=False)
+ax2.plot(xlim,(-1/255)*np.ones(2),'k-')
+ax2.plot(xlim,(1/255)*np.ones(2),'k-')
+ax2.set_xlabel('actual $v_k$', fontsize=18)
+ax2.set_ylabel('prediction error', fontsize=18)
+ax2.set_xlim(xlim)
+ax2.set_aspect(1./ax2.get_data_ratio())
+ax2.text(0.85,-0.015,'(b)',fontsize=24)
+plt.savefig('model_test_2.eps')
 plt.show()
