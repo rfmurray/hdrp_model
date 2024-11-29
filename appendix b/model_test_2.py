@@ -115,9 +115,7 @@ ax4.set_ylabel('prediction error', fontsize=18)
 ax4.set_xlim(xlim)
 ax4.set_ylim((-0.020,0.010))
 ax4.set_aspect(1./ax2.get_data_ratio())
-ax4.text(0.85,-0.012,'(c)',fontsize=24)
-
-print(l)
+ax4.text(0.85,-0.012,'(d)',fontsize=24)
 
 plt.savefig(f'model_test_2_L{int(testLambertian)}_T{int(testTonemapping)}.eps', bbox_inches='tight')
 plt.show()
