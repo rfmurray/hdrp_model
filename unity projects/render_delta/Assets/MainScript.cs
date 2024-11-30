@@ -12,11 +12,14 @@ public class MainScript : MonoBehaviour
 
     int frameCount = 0, frameWait = 30;
 
-    int delta = 1;
+    int delta = 3;
     Texture3DParameter lutTexture;
 
-    const float light_min = 1e-4f, light_max = 400f, light_increment = 1.01f;
-    float i_d;
+    const float light_increment = 1.001f;
+    float i_d, light_max;
+
+    float[] u_knot = { 0f, 1e-9f, 2.606041e-04f, 3.104486e-03f, 7.145272e-03f, 1.268643e-02f, 2.025881e-02f, 3.045015e-02f, 4.442356e-02f, 6.319271e-02f, 8.882296e-02f, 1.234868e-01f, 1.700572e-01f, 2.335635e-01f, 3.208031e-01f, 4.365856e-01f, 5.965817e-01f, 8.099239e-01f, 1.105067e+00f, 1.491640e+00f, 2.033027e+00f, 2.757723e+00f, 3.735954e+00f, 5.081779e+00f, 6.877141e+00f, 9.342603e+00f, 1.260348e+01f, 1.718516e+01f, 2.324688e+01f, 3.144579e+01f, 4.275583e+01f, 5.771645e+01f };
+    float uk2id = Mathf.PI / 0.823f;
 
     const int imsize = 4;   // size of region to capture
     Rect readRect;          // rectangle specifying region to capture
@@ -64,7 +67,7 @@ public class MainScript : MonoBehaviour
 
         // save captured color coordinates to file
         Color[] v = tex.GetPixels();
-        string line = $"{delta},{i_d:F6},{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";
+        string line = $"{delta},{i_d:F9},{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";
         writer.WriteLine(line);
 
         // set next stimulus properties and request a capture
@@ -75,9 +78,10 @@ public class MainScript : MonoBehaviour
 
     void StimFirst()
     {
-        delta = 1;
+        delta = 3;
         SetDeltaCube();
-        dirlight.intensity = i_d = light_min;
+        dirlight.intensity = i_d = 0.95f * uk2id * u_knot[delta-1];
+        light_max = 1.05f * uk2id * u_knot[delta];
         captureWaiting = true;
         captureElapsed = 0;
     }
@@ -91,7 +95,8 @@ public class MainScript : MonoBehaviour
                 return false;
             ++delta;
             SetDeltaCube();
-            i_d = light_min;
+            i_d = 0.95f * uk2id * u_knot[delta-2];
+            light_max = 1.05f * uk2id * (delta == 32 ? u_knot[delta - 1] : u_knot[delta]);
         }
         dirlight.intensity = i_d;
         captureWaiting = true;

@@ -77,7 +77,7 @@ public class MainScript : MonoBehaviour
         tonemap.mode.Override(testTonemap ? TonemappingMode.External : TonemappingMode.None);
 
         // seed rng
-        int rngseed = (int)System.DateTime.Now.Ticks;
+        int rngseed = 0; // (int)System.DateTime.Now.Ticks;
         Random.InitState(rngseed);
 
         // create filename

@@ -54,8 +54,6 @@ end
 errfn2 = @(p) errfn(p,data);
 u_knot = fminsearch(errfn2,u_knot_init);
 
-% u_knot = u_knot_init;
-
 % interpolation between these knot points works differently, so the
 % initial estimates are more accurate
 u_knot(1:2) = u_knot_init(1:2);
@@ -64,8 +62,9 @@ u_knot(1:2) = u_knot_init(1:2);
 err_pre = errfn(u_knot_init,data)
 err_post = errfn(u_knot,data,true)
 
-fprintf('%.3e ',u_knot);
-fprintf('\n');
+fprintf('u_knot = [ 0, 1e-9, ');
+fprintf('%.6e, ',u_knot);
+fprintf(']\n');
 
 hold off
 
@@ -81,8 +80,9 @@ n = max(data.delta);
 err = 0;
 for i = 1:n
     d = data(data.delta==i,:);
-    t_k_hat = npeaks(d.u_k,i,p);
-    err = err + sum((t_k_hat-d.t_k).^2);
+    k = d.t_k > 0.1;
+    t_k_hat = npeaks(d.u_k(k),i,p);
+    err = err + sum((t_k_hat-d.t_k(k)).^2);
     
     if plotit
         plot(xx,npeaks(xx,i,p),'b-');
