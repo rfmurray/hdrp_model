@@ -2,8 +2,7 @@
 
 clear; clc; clf;
 
-% addpath ../tools
-addpath tools
+addpath hdrp
 
 data = readtable('render_delta.txt');
 data = data(data.delta>=3,:);
@@ -26,6 +25,9 @@ box on
 n = max(data.delta);
 u_knot_init = NaN([ n 1 ]);
 
+figure(1);
+set(gcf,'Position',[50 500 1400 400]);
+
 for i = 1:n
     
     d = data(data.delta==i,:);
@@ -39,8 +41,10 @@ for i = 1:n
     end
     u_knot_init(i) = d.u_k(j);
     
-    plot(d.u_k, d.t_k, 'ro-', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
+    plot(d.u_k, d.t_k, 'ro', 'MarkerSize', 4, 'MarkerFaceColor', 'r');
     plot(u_knot_init(i)*[ 1 1 ],[ 0 1.1 ],'k-');
+    h = text(u_knot_init(i)*0.95, 1.05, sprintf('%d',i+2));
+    h.FontSize = 14;
     drawnow;
 
 end
@@ -49,6 +53,8 @@ end
 
 errfn2 = @(p) errfn(p,data);
 u_knot = fminsearch(errfn2,u_knot_init);
+
+% u_knot = u_knot_init;
 
 % interpolation between these knot points works differently, so the
 % initial estimates are more accurate

@@ -64,7 +64,6 @@ pinit <= UB
 phat = fmincon(errfn2, pinit, A, B, [], [], LB, UB);
 
 tonemap.u_knot(3:19) = phat;
-tonemap.makecoord;
 
 t2_hat = tonemap.apply(u1);
 v2_hat = srgbinv(t2_hat);

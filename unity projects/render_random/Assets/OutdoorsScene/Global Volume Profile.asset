@@ -239,7 +239,7 @@ MonoBehaviour:
     m_Value: 0
   multiplier:
     m_OverrideState: 1
-    m_Value: 6.663605
+    m_Value: 0.33646846
   upperHemisphereLuxValue:
     m_OverrideState: 0
     m_Value: 1
@@ -260,13 +260,13 @@ MonoBehaviour:
     m_Value: 0
   top:
     m_OverrideState: 1
-    m_Value: {r: 0.45314223, g: 0.555167, b: 0.9468478, a: 1}
+    m_Value: {r: 0.60313827, g: 0.51185447, b: 0.9969344, a: 1}
   middle:
     m_OverrideState: 1
-    m_Value: {r: 0.45314223, g: 0.555167, b: 0.9468478, a: 1}
+    m_Value: {r: 0.60313827, g: 0.51185447, b: 0.9969344, a: 1}
   bottom:
     m_OverrideState: 1
-    m_Value: {r: 0.45314223, g: 0.555167, b: 0.9468478, a: 1}
+    m_Value: {r: 0.60313827, g: 0.51185447, b: 0.9969344, a: 1}
   gradientDiffusion:
     m_OverrideState: 0
     m_Value: 1
@@ -285,7 +285,7 @@ MonoBehaviour:
   active: 1
   mode:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 4
   useFullACES:
     m_OverrideState: 0
     m_Value: 0
@@ -309,7 +309,7 @@ MonoBehaviour:
     m_Value: 1
   lutTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 8534537815417165676, guid: f09b375587bcd465783a7e7143f40acd,
+    m_Value: {fileID: 8534537815417165676, guid: c84f4810dad4049eba7742ea240e1499,
       type: 3}
   lutContribution:
     m_OverrideState: 0
