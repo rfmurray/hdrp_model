@@ -70,43 +70,35 @@ ax1.set_ylim(xylim)
 ax1.set_aspect(1)
 ax1.text(0.85,0.1,'(a)',fontsize=24)
 
-# plot prediction error in v_k against another scene parameter
-def plot_err(ax, x, err, label):
+# plot prediction error against another scene parameter
+def plot_err(ax, x, err, xlabel, letter):
     xlim = np.array([0,1])
     for i in range(3):
         ax.scatter(x[:,i], err[:,i], color='rgb'[i])
     ax.legend(['red channel','green channel','blue channel'], frameon=False, loc='lower right')
     ax.plot(xlim,(-1/255)*np.ones(2),'k-')
     ax.plot(xlim,(1/255)*np.ones(2),'k-')
+    ax.set_xlabel(xlabel, fontsize=18)
     ax.set_ylabel('prediction error', fontsize=18)
     ax.set_xlim(xlim)
     ax.set_ylim((-0.020,0.010))
     ax.set_aspect(1./ax2.get_data_ratio())
-    ax.text(0.85,-0.012,label,fontsize=24)
+    ax.text(0.85,-0.012,letter,fontsize=24)
     
 # plot prediction error in v_k against actual v_k
 ax2 = fig.add_subplot(2,2,2)
 k = np.random.randint(low=0, high=v.shape[0], size=200)
-plot_err(ax2, v[k,:], v_hat[k,:] - v[k,:], '(b)')
-ax2.set_xlabel('actual $v_k$', fontsize=18)
+plot_err(ax2, v[k,:], v_hat[k,:] - v[k,:], 'actual $v_k$', '(b)')
 
 # plot prediction error in v_k against m_k
 ax3 = fig.add_subplot(2,2,3)
-plot_err(ax3, m[k,:], v_hat[k,:] - v[k,:], '(c)')
-ax3.set_xlabel('material color $m_k$', fontsize=18)
+plot_err(ax3, m[k,:], v_hat[k,:] - v[k,:], 'material color $m_k$', '(c)')
 
-## plot prediction error in v_k against l_k
-#ax4 = fig.add_subplot(2,2,4)
-#plot_err(ax4, d[k,:], v_hat[k,:] - v[k,:], '(d)')
-#ax4.set_xlabel('directional light color $d_k$', fontsize=18)
-
-# replot prediction error in v_k against actual v_k, without low values
-# of material color m_k
+# plot prediction error in v_k against actual v_k, without low values of m_k
 ax4 = fig.add_subplot(2,2,4)
 vv = v[k,:]
 vv[m[k,:] < 0.2] = np.nan;
-plot_err(ax4, vv, v_hat[k,:] - v[k,:], '(d)')
-ax4.set_xlabel('actual $v_k$', fontsize=18)
+plot_err(ax4, vv, v_hat[k,:] - v[k,:], 'actual $v_k$', '(d)')
 
 plt.savefig(f'model_test_2_L{int(testLambertian)}_T{int(testTonemapping)}.eps', bbox_inches='tight')
 plt.show()
