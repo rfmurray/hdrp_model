@@ -1,5 +1,5 @@
-# model_test_1.py  Find rendering scale constant c for Lambertian materials
-#                  (see equation (2) in main text)
+# estimate_c.py  Find rendering scale constant c for Lambertian materials
+#                (see equation (2) in main text)
 
 import numpy as np
 import pandas as pd

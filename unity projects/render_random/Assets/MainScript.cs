@@ -81,10 +81,16 @@ public class MainScript : MonoBehaviour
         Random.InitState(rngseed);
 
         // create filename
-        string filename = "../data";
-        filename += testLambertian ? "_L1" : "_L0";
-        filename += testTonemap ? "_T1" : "_T0";
-        filename += ".txt";
+        string cubename;
+        if (testTonemap)
+        {
+            cubename = tonemap.lutTexture.ToString();
+            int k = cubename.IndexOf("(UnityEngine");
+            cubename = "_" + cubename.Substring(0, k - 1);
+        }
+        else
+            cubename = "";
+        string filename = $"../data_L{(testLambertian ? 1 : 0)}_T{(testTonemap ? 1 : 0)}{cubename}.txt";
 
         // write header to data file
         writer = new StreamWriter(filename, append: false);

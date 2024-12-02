@@ -1,4 +1,4 @@
-% find_knots.m
+% knots_from_delta.m
 
 clear; clc; clf;
 
