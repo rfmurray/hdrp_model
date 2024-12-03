@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from scipy.interpolate import interpn
 
@@ -24,6 +25,12 @@ def srgbinv(y):
     x[f] = y[f] * Phi
     x[~f] = np.power(y[~f], 1/Gamma)*(1+A)-A
     return x
+
+def cubetag(fname):
+    if len(fname) == 0:
+        return ''
+    _, f = os.path.split(fname)
+    return '_' + os.path.splitext(f)[0]
 
 class TonemapCube:
     
