@@ -45,20 +45,20 @@ if testLambertian:
 else:
     u_hat = srgb(m)
 
-# constraint: u^star_i <= u^star_(i+1)
+# constraint: each knot point is less than the next knot point
 nknot = tonemap.u_knot[2:18].size
 A1 = np.identity(nknot) + np.diag((nknot-1)*(-1,), 1)
 A1 = A1[:-1,:]
 lb1 = np.full((A1.shape[0],), -np.inf)
 ub1 = np.zeros((A1.shape[0],))
 
-# constraint: u^star_3 >= 1e-8
+# constraint: the third knot point is at least 1e-8
 A2 = np.zeros((1, nknot))
 A2[0,0] = 1
 lb2 = np.array((1e-8,))
 ub2 = np.array((np.inf,))
 
-# constraint: u^star_19 <= 1.4
+# constraint: the 19th knot point is less than 1.4
 A3 = np.zeros((1, nknot))
 A3[0,-1] = 1
 lb3 = np.array((-np.inf,))

@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from scipy.interpolate import interpn
+import matplotlib.pyplot as plt
 
 Phi = 12.92
 Gamma = 2.4
@@ -37,16 +38,10 @@ class TonemapCube:
     def __init__(self, filename=''):
         
         # knot point coordinates
-        # - estimates from delta fits
         self.u_knot = np.array([ 0, 1e-9, 2.615089e-04, 3.078970e-03, 7.122111e-03, 1.268338e-02, 2.026181e-02, 3.048614e-02, 4.439802e-02, 6.322072e-02, 8.877536e-02, 1.233599e-01, 1.704276e-01, 2.337193e-01, 3.207782e-01, 4.362458e-01, 5.968221e-01, 8.089089e-01, 1.103839e+00, 1.494589e+00, 2.032118e+00, 2.756492e+00, 3.738142e+00, 5.082894e+00, 6.864276e+00, 9.347126e+00, 1.261947e+01, 1.717960e+01, 2.324054e+01, 3.148071e+01, 4.275218e+01, 5.766443e+01 ])
-        # - estimates from optimizing model predictions
-        # self.u_knot = np.array([ 0.000000000, 0.000000001, 0.000000010, 0.002904932, 0.007022516, 0.012769628, 0.020355035, 0.030692471, 0.044981780, 0.064149374, 0.089930606, 0.125204496, 0.172865536, 0.237020901, 0.326773047, 0.440772325, 0.607139173, 0.824515244, 1.103839000, 1.494589000, 2.032118000, 2.756492000, 3.738142000, 5.082894000, 6.864276000, 9.347126000, 12.619470000, 17.179600000, 23.240540000, 31.480710000, 42.752180000, 57.664430000])
         
         # 3D arrays of RGB values
         self.cubeR = self.cubeG = self.cubeB = None
-        
-        # interpolation method
-        self.method = 'linear'
         
         # filename of .cube file
         self.filename = filename
@@ -65,9 +60,9 @@ class TonemapCube:
         if u_k.shape[1] != 3:
             raise Exception('u_k must be an m x 3 array')
         u_k = u_k.clip(self.u_knot[0], self.u_knot[-1])
-        t_r = interpn(3*(self.u_knot,), self.cubeR, u_k, method=self.method)
-        t_g = interpn(3*(self.u_knot,), self.cubeG, u_k, method=self.method)
-        t_b = interpn(3*(self.u_knot,), self.cubeB, u_k, method=self.method)
+        t_r = interpn(3*(self.u_knot,), self.cubeR, u_k, method='linear')
+        t_g = interpn(3*(self.u_knot,), self.cubeG, u_k, method='linear')
+        t_b = interpn(3*(self.u_knot,), self.cubeB, u_k, method='linear')
         return np.column_stack((t_r, t_g, t_b))
         
     def load(self, filename=''):
@@ -108,3 +103,11 @@ class TonemapCube:
         f.write('DOMAIN_MAX 1.0 1.0 1.0\n')
         np.savetxt(f, mat, fmt='%.6f')
         f.close()
+    
+    def __repr__(self):
+        s = 'u_knot = ' + str(self.u_knot) + '\n'
+        s += 'cubeR.shape = ' + str(self.cubeR.shape) + '\n'
+        s += 'cubeG.shape = ' + str(self.cubeG.shape) + '\n'
+        s += 'cubeB.shape = ' + str(self.cubeB.shape) + '\n'
+        s += 'filename = "' + self.filename + '"\n'
+        return s

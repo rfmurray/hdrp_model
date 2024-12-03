@@ -13,6 +13,8 @@ public class MainScript : MonoBehaviour
     public bool testTonemap;
     [Header("Number of random samples to render")]
     public int samples;
+    [Header("Lighting scale factor")]
+    public float lightingScale;
 
     // scene objects
     [Header("Links to scene objects")]
@@ -77,7 +79,7 @@ public class MainScript : MonoBehaviour
         tonemap.mode.Override(testTonemap ? TonemappingMode.External : TonemappingMode.None);
 
         // seed rng
-        int rngseed = 0; // (int)System.DateTime.Now.Ticks;
+        int rngseed = (int)System.DateTime.Now.Ticks;
         Random.InitState(rngseed);
 
         // create filename
@@ -156,8 +158,8 @@ public class MainScript : MonoBehaviour
         d = RandomColor();           // directional light color
         l = RandomUnitVector3();     // directional light direction
         a = RandomColor();           // ambient light color
-        i_d = Random.Range(0f, Mathf.PI * 2f) * Mathf.Pow(2f, e);  // directional light intensity; scale with exposure so we get reasonable rendered values
-        i_a = Random.Range(0f, 2f) * Mathf.Pow(2f, e);             // ambient light intensity
+        i_d = lightingScale * Random.Range(0f, Mathf.PI * 2f) * Mathf.Pow(2f, e);  // directional light intensity; scale with exposure so we get reasonable rendered values
+        i_a = lightingScale * Random.Range(0f, 2f) * Mathf.Pow(2f, e);             // ambient light intensity
 
         // assign stimulus properties to objects
 
@@ -180,6 +182,9 @@ public class MainScript : MonoBehaviour
         // start a capture request        
         captureWaiting = true;
         captureElapsed = 0;
+
+        if (sampleNumber % 100 == 0)
+            Debug.Log($"{sampleNumber} / {samples}");
 
         return true;
     }
