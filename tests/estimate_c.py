@@ -59,7 +59,7 @@ print(r)
 
 # add regression line to plot
 plt.plot(xylim, r.slope*xylim, 'r-')
-plt.savefig('figures/model_test_1.pdf', bbox_inches='tight')
+plt.savefig('figures/estimate_c.pdf', bbox_inches='tight')
 plt.show()
 
 # the scale constant that will adjust the predicted renderd color

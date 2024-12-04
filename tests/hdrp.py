@@ -43,6 +43,9 @@ class TonemapCube:
         # 3D arrays of RGB values
         self.cubeR = self.cubeG = self.cubeB = None
         
+        # interpolation method
+        method = 'linear'
+        
         # filename of .cube file
         self.filename = filename
         if self.filename:
@@ -60,9 +63,9 @@ class TonemapCube:
         if u_k.shape[1] != 3:
             raise Exception('u_k must be an m x 3 array')
         u_k = u_k.clip(self.u_knot[0], self.u_knot[-1])
-        t_r = interpn(3*(self.u_knot,), self.cubeR, u_k, method='linear')
-        t_g = interpn(3*(self.u_knot,), self.cubeG, u_k, method='linear')
-        t_b = interpn(3*(self.u_knot,), self.cubeB, u_k, method='linear')
+        t_r = interpn(3*(self.u_knot,), self.cubeR, u_k, method=self.method)
+        t_g = interpn(3*(self.u_knot,), self.cubeG, u_k, method=self.method)
+        t_b = interpn(3*(self.u_knot,), self.cubeB, u_k, method=self.method)
         return np.column_stack((t_r, t_g, t_b))
         
     def load(self, filename=''):

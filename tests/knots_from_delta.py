@@ -59,5 +59,5 @@ plt.savefig('figures/knots_from_delta.pdf', bbox_inches='tight')
 plt.show()
 
 # print knot points
-u_knot = np.concatenate( ( np.array((0, 1e-9)), u_knot) )
+u_knot = np.concatenate( ( np.array((0, 1e-9)), u_knot[2:]) )
 print(np.array2string(u_knot, formatter={'float' : lambda u : f'{u:.6g}'}, separator=', ', max_line_width=np.inf))
