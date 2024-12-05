@@ -62,7 +62,7 @@ class TonemapCube:
     def apply(self, u_k):
         if u_k.shape[1] != 3:
             raise Exception('u_k must be an m x 3 array')
-        u_k = u_k.clip(self.u_knot[0], self.u_knot[-1])
+        u_k = u_k.clip(self.u_knot[2], self.u_knot[-1])
         t_r = interpn(3*(self.u_knot,), self.cubeR, u_k, method=self.method)
         t_g = interpn(3*(self.u_knot,), self.cubeG, u_k, method=self.method)
         t_b = interpn(3*(self.u_knot,), self.cubeB, u_k, method=self.method)
