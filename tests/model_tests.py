@@ -99,7 +99,7 @@ def plot_err(ax, x, err, xlabel, letter):
     ax.set_xlabel(xlabel, fontsize=18)
     ax.set_ylabel('prediction error', fontsize=18)
     ax.set_xlim(xlim)
-    ax.set_ylim((-0.02,0.01))
+    ax.set_ylim((-0.02,0.02))
     ax.set_aspect(1./ax2.get_data_ratio())
     ax.text(0.85,-0.012,letter,fontsize=24)
 
