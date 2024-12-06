@@ -98,10 +98,11 @@ public class MainScript : MonoBehaviour
     void InitCalibrationStimuli()
     {
         calibrationList.Clear();
+        calibrationList.Add(new Color(0f, 0f, 0f));
         if(chromaticCalibration)
         {
-            int n = 9;
-            for (int i = 0; i <= n; i++)
+            int n = 10;
+            for (int i = 1; i <= n; i++)
             {
                 float g = (float)i / (float)n;
                 calibrationList.Add(new Color(g, 0f, 0f));
