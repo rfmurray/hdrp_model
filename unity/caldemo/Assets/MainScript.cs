@@ -9,6 +9,7 @@ public class MainScript : MonoBehaviour
     enum ProgramPhase { ShowStimulus, GetResponse, Calibrate }
     ProgramPhase phase = ProgramPhase.ShowStimulus;
 
+    // public variables that appear in the Inspector view of the Main Camera object
     [Header("Check for chromatic calibration; uncheck for achromatic")]
     public bool chromaticCalibration;  // flag whether to run chromatic or achromatic calibration
     [Header("Links to objects in the scene")]
@@ -16,9 +17,9 @@ public class MainScript : MonoBehaviour
     public GameObject calPlane;        // large plane that will show calibration stimuli
     public Material calMaterial;       // unlit material of calibration plane
     public Volume globalVolume;        // global volume object that contains tonemapping object
-    Tonemapping tonemap;               // tonemapping object
 
-    List<Color> calibrationList = new List<Color>();
+    List<Color> calibrationList = new List<Color>();  // list of stimuli to show during calibration
+    Tonemapping tonemap;                              // tonemapping object
 
     void Start()
     {
@@ -36,16 +37,16 @@ public class MainScript : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))  // turn tonemapping on
+        if (Input.GetKeyDown(KeyCode.Alpha1))  // press 1: turn tonemapping on
             SetTonemapping(true);
 
-        if (Input.GetKeyDown(KeyCode.Alpha2))  // turn tonemapping off
+        if (Input.GetKeyDown(KeyCode.Alpha2))  // press 2: turn tonemapping off
             SetTonemapping(false);
 
-        if (Input.GetKeyDown(KeyCode.Alpha3))  // toggle calibration
+        if (Input.GetKeyDown(KeyCode.Alpha3))  // press 3: start or stop calibration
             SetCalibration(phase != ProgramPhase.Calibrate);
 
-        if (Input.GetKeyDown(KeyCode.Q))       // quit experiment
+        if (Input.GetKeyDown(KeyCode.Q))       // press q: quit experiment
             Quit();
 
         if (phase == ProgramPhase.ShowStimulus)      // show a new stimulus
@@ -61,6 +62,7 @@ public class MainScript : MonoBehaviour
 
     void ShowNextStimulus()
     {
+        // rotate capsule object to a random orientation
         float theta = Random.Range(-30f, 30f);
         stimulusObject.transform.rotation = Quaternion.Euler(0f, 0f, -theta);
         phase = ProgramPhase.GetResponse;
@@ -69,8 +71,11 @@ public class MainScript : MonoBehaviour
 
     void CheckStimulusResponse()
     {
+        // f = counterclockwise, j = clockwise
         if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.J))
         {
+            // normally we would record the stimulus and response here,
+            // but this is just a demonstration experiment
             phase = ProgramPhase.ShowStimulus;
             Debug.Log("response recorded");
         }
@@ -83,6 +88,7 @@ public class MainScript : MonoBehaviour
         calPlane.SetActive(on);
         if (on)
         {
+            // start calibraiton phase
             phase = ProgramPhase.Calibrate;
             InitCalibrationStimuli();
             ShowNextCalibrationStimulus();
@@ -90,6 +96,7 @@ public class MainScript : MonoBehaviour
         }
         else
         {
+            // return to experiment phase
             phase = ProgramPhase.ShowStimulus;
             Debug.Log("ending calibration");
         }
@@ -97,38 +104,32 @@ public class MainScript : MonoBehaviour
 
     void InitCalibrationStimuli()
     {
+        // create list of stimuli for calibration
+        int n = 10;
         calibrationList.Clear();
         calibrationList.Add(new Color(0f, 0f, 0f));
-        if(chromaticCalibration)
+        for (int i = 1; i <= n; i++)
         {
-            int n = 10;
-            for (int i = 1; i <= n; i++)
+            float g = (float)i / (float)n;
+            if (chromaticCalibration)
             {
-                float g = (float)i / (float)n;
                 calibrationList.Add(new Color(g, 0f, 0f));
                 calibrationList.Add(new Color(0f, g, 0f));
                 calibrationList.Add(new Color(0f, 0f, g));
-                calibrationList.Add(new Color(g, g, g));
             }
-        }
-        else
-        {
-            for (int i = 0; i <= 9; i++)
-            {
-                float g = (float)i / 9f;
-                calibrationList.Add(new Color(g, g, g));
-            }
+            calibrationList.Add(new Color(g, g, g));
         }
     }
 
     void CheckCalibrationResponse()
     {
+        // press space: show next calibration stimulus
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if(!ShowNextCalibrationStimulus())
             {
                 SetCalibration(false);
-                Debug.Log("calibration completed");
+                Debug.Log("calibration finished");
                 return;
             }
             Debug.Log("next calibration stimulus shown");
