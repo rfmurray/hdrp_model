@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 from scipy import optimize
 from hdrp import srgb, gamma, gammainv, TonemapCube
 
-grey = np.array([0, 5, 10, 20, 30, 40, 50, 100, 125, 150, 175, 200, 225, 255])
-v_k = grey/255
+v_k = np.linspace(0, 1, 10)
 
-lum = 5 + 95*(v_k**2.2) + np.random.normal(size=grey.shape)
+lum = 5 + 95*(v_k**2.2) + np.random.normal(scale=2, size=v_k.shape)
 
 def errfn(param):
     return ((lum - gamma(v_k, *param))**2).sum()
