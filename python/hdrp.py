@@ -64,8 +64,8 @@ class TonemapCube:
         # knot point coordinates
         self.u_knot = np.array([0, 1e-09, 1e-08, 0.0029048, 0.00716077, 0.0127321, 0.0205241, 0.0310554, 0.045044, 0.0642878, 0.0902456, 0.125466, 0.173288, 0.237135, 0.326482, 0.441934, 0.605188, 0.82122, 1.10384, 1.49459, 2.03212, 2.75649, 3.73814, 5.08289, 6.86428, 9.34713, 12.6195, 17.1796, 23.2405, 31.4807, 42.7522, 57.6644])
         
-        # 3D arrays of RGB values
-        self.cubeR = self.cubeG = self.cubeB = None
+        # 4D array of RGB values
+        self.cube = None
         
         # interpolation method
         self.method = 'linear'
@@ -79,18 +79,17 @@ class TonemapCube:
         n = t_knot.size
         if n != self.u_knot.size:
             raise Exception('array size does not match number of knot points')
-        self.cubeR = np.tile(t_knot.reshape((-1,1,1)),(1,n,n))
-        self.cubeG = np.tile(t_knot.reshape((1,-1,1)),(n,1,n))
-        self.cubeB = np.tile(t_knot.reshape((1,1,-1)),(n,n,1))
+        cubeR = np.tile(t_knot.reshape((-1,1,1,1)),(1,n,n,1))
+        cubeG = np.tile(t_knot.reshape((1,-1,1,1)),(n,1,n,1))
+        cubeB = np.tile(t_knot.reshape((1,1,-1,1)),(n,n,1,1))
+        self.cube = np.concatenate((cubeR, cubeG, cubeB), axis=3)
 
     def apply(self, u_k):
         if u_k.shape[1] != 3:
             raise Exception('u_k must be an m x 3 array')
         u_k = u_k.clip(self.u_knot[2], self.u_knot[-1])
-        t_r = interpn(3*(self.u_knot,), self.cubeR, u_k, method=self.method)
-        t_g = interpn(3*(self.u_knot,), self.cubeG, u_k, method=self.method)
-        t_b = interpn(3*(self.u_knot,), self.cubeB, u_k, method=self.method)
-        return np.column_stack((t_r, t_g, t_b))
+        t_k = interpn(3*(self.u_knot,), self.cube, u_k, method=self.method)
+        return t_k
         
     def load(self, filename=''):
         if filename:
@@ -112,20 +111,19 @@ class TonemapCube:
         n = round(n)
         if n != self.u_knot.size:
             raise Exception('cube size does not match number of knot points')
-        
-        self.cubeR = mat[:,0].reshape((n,n,n), order='F')
-        self.cubeG = mat[:,1].reshape((n,n,n), order='F')
-        self.cubeB = mat[:,2].reshape((n,n,n), order='F')
-    
+
+        self.cube = mat.reshape((n,n,n,3), order='F')
+
     def save(self, filename=''):
         if filename:
             self.filename = filename
-        
-        mat = np.column_stack([ self.cubeR.flatten(order='F'), self.cubeG.flatten(order='F'), self.cubeB.flatten(order='F') ])
-        
+
+        n = self.cube.shape[0]
+        mat = self.cube.reshape((n**3,3), order='F')
+
         f = open(self.filename, 'w')
         f.write(f'TITLE "{self.filename}"\n')
-        f.write(f'LUT_3D_SIZE {self.cubeR.shape[0]}\n')
+        f.write(f'LUT_3D_SIZE {n}\n')
         f.write('DOMAIN_MIN 0.0 0.0 0.0\n')
         f.write('DOMAIN_MAX 1.0 1.0 1.0\n')
         np.savetxt(f, mat, fmt='%.6f')
@@ -133,8 +131,6 @@ class TonemapCube:
     
     def __repr__(self):
         s = 'u_knot = ' + str(self.u_knot) + '\n'
-        s += 'cubeR.shape = ' + str(self.cubeR.shape) + '\n'
-        s += 'cubeG.shape = ' + str(self.cubeG.shape) + '\n'
-        s += 'cubeB.shape = ' + str(self.cubeB.shape) + '\n'
+        s += 'cube.shape = ' + str(self.cube.shape) + '\n'
         s += 'filename = "' + self.filename + '"\n'
         return s
