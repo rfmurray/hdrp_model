@@ -11,10 +11,6 @@ from hdrp import srgb
 # material and no tonemapping
 df = pd.read_csv('data/data_L1_T0.txt')
 
-# discard samples that may be maxed out
-k = (df[['v_r','v_g','v_b']] <= 0.99).all(axis=1)
-df = df[k]
-
 # create numpy arrays for model parameters
 e = df['e'].to_numpy().reshape((-1,1))       # exposure
 m = df[['m_r','m_g','m_b']].to_numpy()       # material color
@@ -52,19 +48,17 @@ plt.xlim(xylim)
 plt.ylim(xylim)
 plt.gca().set_aspect(1)
 
-# find regression slope
+# find regression slope of a line constrained to pass through the origin
 k = ~np.isnan(u)
-r = stats.linregress(u[k], u_hat[k])
-print(r)
+m = np.linalg.lstsq(u[k].reshape((-1,1)), u_hat[k].reshape((-1,1)))[0].item()
 
-# the scale constant that will adjust the predicted renderd color
-# coordinates u_k so that they fall on the line y=x is the inverse
-# of the regression slope
-c = 1/r.slope
+# the scale constant that will adjust the predicted rendered color coordinates u_k
+# so that they fall on the line y=x is the inverse of the regression slope
+c = 1/m
 print(f'rendering model scale constant: c = {c:.3f}');
 
 # add regression line to plot
-plt.plot(xylim, r.slope*xylim, 'r-')
+plt.plot(xylim, m * xylim, 'r-')
 plt.text(0.7, 0.15, f'c = {c:.3f}', fontsize=12)
 plt.savefig('figures/estimate_c.pdf', bbox_inches='tight')
 plt.show()

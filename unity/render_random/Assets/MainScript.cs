@@ -8,13 +8,13 @@ public class MainScript : MonoBehaviour
 
     // user-configurable rendering parameters
     [Header("Check to render Lambertian material; uncheck for Unlit")]
-    public bool testLambertian;
+    public bool testLambertian;                // flag whether to render Lambertian (true) or unlit (false) material
     [Header("Check to apply tonemapping")]
-    public bool testTonemap;
+    public bool testTonemap;                   // flag whether to apply tonemapping
     [Header("Number of random samples to render")]
-    public int samples;
+    public int samples;                        // number of samples to capture
     [Header("Lighting scale factor")]
-    public float lightingScale;
+    public float lightingScale;                // scale factor for lighting, to take into account exposure setting
 
     // scene objects
     [Header("Links to scene objects")]
@@ -23,10 +23,8 @@ public class MainScript : MonoBehaviour
     public Light directionalLight;
     public Volume volume;
 
-    // properties of scene objects that we'll set randomly
-    // - here I use the same variable names as in the paper
-    // - this makes them less readable at first, but in the long run makes
-    //   it easier to map them onto the content of the paper
+    // scene and object properties that we'll randomize
+    // - same variable names as in the paper
     Color m;    // material color
     Vector3 n;  // plane surface normal
     Color d;    // directional light color
@@ -36,18 +34,20 @@ public class MainScript : MonoBehaviour
     float i_a;  // ambient light intensity
     float e;    // exposure (not randomized)
 
-    // frame counter and trial counter
-    int frameCount = 0, frameWait = 30;
-    int sampleNumber = 0;
-    
-    const int imsize = 4;   // size of region to capture
-    Rect readRect;          // rectangle specifying region to capture
-    Texture2D tex;          // texture where captured region will be stored
-    bool captureWaiting = false;
-    int captureElapsed, captureWait = 2;
-    GradientSky sky;
+    int frameCount = 0;           // number of frames elapsed since program started
+    int frameWait = 30;           // number of frames to wait before starting rendering (burn-in period)
 
-    StreamWriter writer;
+    int sampleNumber = 0;         // number of sample currently being rendered
+    bool captureWaiting = false;  // flag indicating whether capture is in progress
+    int captureElapsed;           // counter for frames elapsed since capture request
+    int captureWait = 2;          // number of frames to wait after capture request before capturing image
+    const int imsize = 4;         // size of region to capture
+    Rect readRect;                // rectangle specifying coordinates of region to capture
+    Texture2D tex;                // texture where captured region will be stored
+
+    GradientSky sky;              // object used to set ambient lighting properties
+
+    StreamWriter writer;          // object to manage text file where we write the results
 
     void Start()
     {
@@ -70,7 +70,7 @@ public class MainScript : MonoBehaviour
         volume.sharedProfile.TryGet<Exposure>(out Exposure tmpExposure);
         e = tmpExposure.fixedExposure.value;
 
-        // choose the material that we'll test
+        // choose which material type we'll render
         Renderer renderer = plane.GetComponent<Renderer>();
         renderer.material = testLambertian ? materialLambertian : materialUnlit;
 
@@ -78,11 +78,15 @@ public class MainScript : MonoBehaviour
         volume.sharedProfile.TryGet<Tonemapping>(out Tonemapping tonemap);
         tonemap.mode.Override(testTonemap ? TonemappingMode.External : TonemappingMode.None);
 
-        // seed rng
+        // seed rng from clock
         int rngseed = (int)System.DateTime.Now.Ticks;
         Random.InitState(rngseed);
 
         // create filename
+        // - filenames have this pattern: ../data_L1_T1_identity.txt
+        // - material type is indicated by L0 (unlit) or L1 (Lambertian)
+        // - tonemapping status is indicated by T0 (off) or T1 (on)
+        // - if tonemapping is on, the last part of the filename is the cube filename, such as "identity"
         string cubename;
         if (testTonemap)
         {
@@ -101,11 +105,11 @@ public class MainScript : MonoBehaviour
 
     void Update()
     {
-        // skip frames during an initial period
+        // wait for a burn-in period to elapse
         if (++frameCount < 30)
             return;
 
-        // set random stimulus properties and request first capture
+        // set random stimulus properties and request capture
         if (frameCount == frameWait)
             StimNext();
 
@@ -113,12 +117,13 @@ public class MainScript : MonoBehaviour
         if (captureWaiting)
             return;
 
-        // save scene parameters and captured color coordinates to file
-        Color[] v = tex.GetPixels();                // 'tex' was captured in the OnEndCameraRendering callback
-        string line = $"{sampleNumber}";            // sample number
-        line += $",{e:F6}";                         // exposure
-        line += $",{m.r:F6},{m.g:F6},{m.b:F6}";     // material color
-        line += $",{n.x:F6},{n.y:F6},{n.z:F6}";     // plane surface normal
+        // if no longer waiting for a capture, then save scene parameters
+        // and captured color coordinates to file
+        Color[] v = tex.GetPixels();                      // 'tex' was captured in the OnEndCameraRendering callback
+        string line = $"{sampleNumber}";                  // sample number
+        line += $",{e:F6}";                               // exposure
+        line += $",{m.r:F6},{m.g:F6},{m.b:F6}";           // material color
+        line += $",{n.x:F6},{n.y:F6},{n.z:F6}";           // plane surface normal
         line += $",{l.x:F6},{l.y:F6},{l.z:F6}";           // directional light direction
         line += $",{i_d:F6},{d.r:F6},{d.g:F6},{d.b:F6}";  // directional light intensity and color
         line += $",{i_a:F6},{a.r:F6},{a.g:F6},{a.b:F6}";  // ambient light intensity and color
@@ -131,11 +136,13 @@ public class MainScript : MonoBehaviour
 
     }
 
+    // get a random color
     Color RandomColor()
     {
         return new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
     }
 
+    // get a random unit vector
     Vector3 RandomUnitVector3(float maxDeclination = 60f)
     {
         // use inverse transform sampling to get uniformly distributed points on the sphere
@@ -146,6 +153,7 @@ public class MainScript : MonoBehaviour
                            -Mathf.Cos(declination));
     }
 
+    // assign random stimulus properties and request capture
     bool StimNext()
     {
         // if we have enough samples, then quit
@@ -183,18 +191,20 @@ public class MainScript : MonoBehaviour
         captureWaiting = true;
         captureElapsed = 0;
 
+        // periodically show number of samples captured so far
         if (sampleNumber % 100 == 0)
             Debug.Log($"{sampleNumber} / {samples}");
 
         return true;
     }
 
+    // callback that captures rendered pixels
     void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
     {
         if (camera != Camera.main)  // don't capture pixels if this is the wrong camera
             return;
 
-        if (!captureWaiting)  // don't capture pixels if there isn't an active request
+        if (!captureWaiting)        // don't capture pixels if there isn't an active request
             return;
 
         if (++captureElapsed < captureWait)  // don't capture pixels until we've waited a few frames after the request
@@ -205,11 +215,13 @@ public class MainScript : MonoBehaviour
         captureWaiting = false;
     }
 
+    // when shutting down, remove callback
     void OnDestroy()
     {
         RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
     }
 
+    // end program
     void Quit()
     {
         writer.Close();

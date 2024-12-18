@@ -7,25 +7,31 @@ using UnityEditor;
 public class MainScript : MonoBehaviour
 {
 
-    public Light dirlight;
-    public Volume globalVolume;
+    // scene objects
+    public Light dirlight;          // directional light
+    public Volume globalVolume;     // global volume, which we'll use to choose the cube file for tonemapping
 
-    int frameCount = 0, frameWait = 30;
+    int frameCount = 0;             // number of frames elapsed since program started
+    int frameWait = 30;             // number of frames to wait before starting rendering (burn-in period)
 
-    int delta = 3;
-    Texture3DParameter lutTexture;
+    int delta_m = 1;                // number of cube file currently used for tonemapping
+    Texture3DParameter lutTexture;  // object that contains tonemapping table
 
-    const float light_min = 1e-4f, light_max = 400f, light_increment = 1.01f;
-    float i_d;
+    const float light_min = 1e-4f;         // we sweep the directional light intensity from light_min
+    const float light_max = 400f;          // to light_max in multiplicative steps
+    const float light_increment = 1.01f;   // of size light_increment
+    float i_d;                      // current directional light intensity
 
-    const int imsize = 4;   // size of region to capture
-    Rect readRect;          // rectangle specifying region to capture
-    Texture2D tex;          // texture where captured region will be stored
-    bool captureWaiting = false;
-    int captureElapsed, captureWait = 2;
+    const int imsize = 4;           // size of region to capture
+    Rect readRect;                  // rectangle specifying coordinates of region to capture
+    Texture2D tex;                  // texture where captured region will be stored
 
-    string filename = "../data_delta.txt";
-    StreamWriter writer;
+    bool captureWaiting = false;    // flag indicating whether capture is in progress
+    int captureElapsed;             // counter for frames elapsed since capture request
+    int captureWait = 2;            // number of frames to wait after capture request before capturing image
+
+    string filename = "../data_delta.txt";  // name of data file
+    StreamWriter writer;                    // object to manage text file where we write the results
 
     void Start() {
 
@@ -40,17 +46,19 @@ public class MainScript : MonoBehaviour
         // add post-rendering callback
         RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 
+        // get LUT object that contains tonemapping table
         globalVolume.sharedProfile.TryGet<Tonemapping>(out var tmap);
         lutTexture = tmap.lutTexture;
 
+        // write header to data file
         writer = new StreamWriter(filename, append: false);
-        writer.WriteLine("delta,i_d,v_r,v_g,v_b");
+        writer.WriteLine("delta_m,i_d,v_r,v_g,v_b");
 
     }
 
-    void Update() {
-
-        // skip frames during an initial period
+    void Update()
+    {
+        // wait for a burn-in period to elapse
         if (++frameCount < frameWait)
             return;
 
@@ -62,9 +70,10 @@ public class MainScript : MonoBehaviour
         if (captureWaiting)
             return;
 
-        // save captured color coordinates to file
+        // if no longer waiting for a capture, save lighting intensity and
+        // captured color coordinates to file
         Color[] v = tex.GetPixels();
-        string line = $"{delta},{i_d:F9},{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";
+        string line = $"{delta_m},{i_d:F9},{v[0].r:F6},{v[0].g:F6},{v[0].b:F6}";
         writer.WriteLine(line);
 
         // set next stimulus properties and request a capture
@@ -73,23 +82,25 @@ public class MainScript : MonoBehaviour
 
     }
 
+    // set initial stimulus properties and request a capture
     void StimFirst()
     {
-        delta = 1;
+        delta_m = 1;
         SetDeltaCube();
         dirlight.intensity = i_d = light_min;
         captureWaiting = true;
         captureElapsed = 0;
     }
 
+    // set next stimulus properties and request a capture
     bool StimNext()
     {
         i_d *= light_increment;
         if (i_d > light_max)
         {
-            if (delta == 32)
+            if (delta_m == 32)
                 return false;
-            ++delta;
+            ++delta_m;
             SetDeltaCube();
             i_d = light_min;
         }
@@ -99,15 +110,17 @@ public class MainScript : MonoBehaviour
         return true;
     }
 
+    // load a new tonemapping table
     void SetDeltaCube()
     {
-        string name = $"delta_{delta:D2}";
+        string name = $"delta_{delta_m:D2}";
         string[] cubeguid = AssetDatabase.FindAssets(name);
         string cubepath = AssetDatabase.GUIDToAssetPath(cubeguid[0]);
         lutTexture.value = (Texture3D)AssetDatabase.LoadAssetAtPath(cubepath, typeof(Texture3D));
         Debug.Log(cubepath);
     }
 
+    // callback that captures rendered pixels
     void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
     {
         if (camera != Camera.main)  // don't capture pixels if this is the wrong camera
@@ -124,11 +137,13 @@ public class MainScript : MonoBehaviour
         captureWaiting = false;
     }
 
+    // when shutting down, remove callback
     void OnDestroy()
     {
         RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
     }
 
+    // end program
     void Quit()
     {
         writer.Close();

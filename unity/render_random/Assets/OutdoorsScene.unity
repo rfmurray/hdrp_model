@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 36.375004, g: 9.570313, b: 25.312504, a: 1}
+  m_IndirectSpecularColor: {r: 0.53173834, g: 0.087097175, b: 0.18566898, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -733,7 +733,7 @@ MonoBehaviour:
   testLambertian: 1
   testTonemap: 0
   samples: 5000
-  lightingScale: 60
+  lightingScale: 1
   plane: {fileID: 850274521}
   materialLambertian: {fileID: 2100000, guid: a109c283f1bf4413184e41de09b14b17, type: 2}
   materialUnlit: {fileID: 2100000, guid: a5fc51b942020473db22dc8fad39df31, type: 2}

@@ -10,22 +10,20 @@ X = 0.04045
 Y = 0.0031308
 
 def srgb(x):
-    if ~isinstance(x, np.ndarray):
-        x = np.array(x)
-    y = np.empty(x.shape)
-    f = x < X
-    y[f] = x[f] / Phi
-    y[~f] = np.power((x[~f]+A)/(1+A), Gamma)
-    return y
+    x = np.array(x).clip(0,1)
+    return np.where(x<X, x/Phi, np.power((x+A)/(1+A), Gamma))
 
 def srgbinv(y):
-    if ~isinstance(y, np.ndarray):
-        y = np.array(y)
-    x = np.empty(y.shape)
-    f = y < Y
-    x[f] = y[f] * Phi
-    x[~f] = np.power(y[~f], 1/Gamma)*(1+A)-A
-    return x
+    y = np.array(y).clip(0,1)
+    return np.where(y<Y, y*Phi, np.power(y, 1/Gamma)*(1+A)-A)
+
+def h(v, v0, gamma):
+    v = np.array(v).clip(v0,1)
+    return ((v-v0)/(1-v0)) ** gamma
+
+def hinv(p, v0, gamma):
+    p = np.array(p).clip(0,1)
+    return v0 + (1-v0)*(p ** (1/gamma))
 
 def cubetag(fname):
     if len(fname) == 0:
@@ -33,37 +31,13 @@ def cubetag(fname):
     _, f = os.path.split(fname)
     return '_' + os.path.splitext(f)[0]
 
-def gamma(x, kappa, x0, gamma_exp, delta):
-    x = np.array(x)
-    low = x < x0
-    high = x > 1
-    ok = ~(low|high)
-
-    y = np.full(x.shape, np.nan)
-    y[low] = delta
-    y[high] = kappa + delta
-    y[ok] = kappa * ((x[ok]-x0)/(1-x0))**gamma_exp + delta
-    return y
-
-def gammainv(y, kappa, x0, gamma_exp, delta):
-    y = np.array(y)
-    low = y < delta
-    high = y > kappa + delta
-    ok = ~(low|high)
-
-    x = np.full(y.shape, np.nan)
-    x[low] = x0
-    x[high] = 1
-    x[ok] = x0 + (1-x0)*((y[ok]-delta)/kappa)**(1/gamma_exp)
-    return x
-
 class TonemapCube:
     
     def __init__(self, filename=''):
         
         # knot point coordinates
-        self.u_knot = np.array([0, 1e-09, 1e-08, 0.0029048, 0.00716077, 0.0127321, 0.0205241, 0.0310554, 0.045044, 0.0642878, 0.0902456, 0.125466, 0.173288, 0.237135, 0.326482, 0.441934, 0.605188, 0.82122, 1.10384, 1.49459, 2.03212, 2.75649, 3.73814, 5.08289, 6.86428, 9.34713, 12.6195, 17.1796, 23.2405, 31.4807, 42.7522, 57.6644])
-        
+        self.u_knot = np.array([0, 1e-09, 1.317e-09, 0.002826, 0.007251, 0.01279, 0.02061, 0.03115, 0.04511, 0.06479, 0.0903, 0.1258, 0.1734, 0.238, 0.3264, 0.4434, 0.6056, 0.8231, 1.104, 1.495, 2.032, 2.756, 3.738, 5.083, 6.864, 9.347, 12.62, 17.18, 23.24, 31.48, 42.75, 57.66])
+
         # 4D array of RGB values
         self.cube = None
         
@@ -76,12 +50,15 @@ class TonemapCube:
             self.load(filename)
     
     def setchannels(self, t_knot):
-        n = t_knot.size
+        if t_knot.ndim==1 or t_knot.shape[1] == 1:
+            t_knot = np.column_stack((t_knot, t_knot, t_knot))
+
+        n = t_knot.shape[0]
         if n != self.u_knot.size:
             raise Exception('array size does not match number of knot points')
-        cubeR = np.tile(t_knot.reshape((-1,1,1,1)),(1,n,n,1))
-        cubeG = np.tile(t_knot.reshape((1,-1,1,1)),(n,1,n,1))
-        cubeB = np.tile(t_knot.reshape((1,1,-1,1)),(n,n,1,1))
+        cubeR = np.tile(t_knot[:,0].reshape((-1,1,1,1)),(1,n,n,1))
+        cubeG = np.tile(t_knot[:,1].reshape((1,-1,1,1)),(n,1,n,1))
+        cubeB = np.tile(t_knot[:,2].reshape((1,1,-1,1)),(n,n,1,1))
         self.cube = np.concatenate((cubeR, cubeG, cubeB), axis=3)
 
     def apply(self, u_k):
