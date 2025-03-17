@@ -6,24 +6,24 @@ using UnityEngine.Rendering.HighDefinition;
 public class MainScript : MonoBehaviour
 {
     // phases of the experiment; used to save state between calls to Update()
-    enum ProgramPhase { ShowStimulus, GetResponse, Calibrate }
+    enum ProgramPhase { ShowStimulus, GetResponse, Characterize }
     ProgramPhase phase = ProgramPhase.ShowStimulus;
 
     // public variables that appear in the Inspector view of the Main Camera object
-    [Header("Check for chromatic calibration; uncheck for achromatic")]
-    public bool chromaticCalibration;  // flag whether to run chromatic or achromatic calibration
+    [Header("Check for chromatic characterization; uncheck for achromatic")]
+    public bool chromaticCharacterization;  // flag whether to run chromatic or achromatic characterization
     [Header("Links to objects in the scene")]
-    public GameObject stimulusObject;  // capsule object for orientation discrimination task
-    public GameObject calPlane;        // large plane that will show calibration stimuli
-    public Material calMaterial;       // unlit material of calibration plane
-    public Volume globalVolume;        // global volume object that contains tonemapping object
+    public GameObject stimulusObject;      // capsule object for orientation discrimination task
+    public GameObject charPlane;           // large plane that will show characterization stimuli
+    public Material charMaterial;          // unlit material of characterization plane
+    public Volume globalVolume;            // global volume object that contains tonemapping object
 
-    List<Color> calibrationList = new List<Color>();  // list of stimuli to show during calibration
-    Tonemapping tonemap;                              // tonemapping object
+    List<Color> characterizationList = new List<Color>();  // list of stimuli to show during characterization
+    Tonemapping tonemap;                                   // tonemapping object
 
     void Start()
     {
-        // seed rng
+        // seed rng from clock
         int rngseed = (int)System.DateTime.Now.Ticks;
         Random.InitState(rngseed);
 
@@ -43,18 +43,18 @@ public class MainScript : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha2))  // press 2: turn tonemapping off
             SetTonemapping(false);
 
-        if (Input.GetKeyDown(KeyCode.Alpha3))  // press 3: start or stop calibration
-            SetCalibration(phase != ProgramPhase.Calibrate);
+        if (Input.GetKeyDown(KeyCode.Alpha3))  // press 3: start or stop characterization
+            SetCharacterization(phase != ProgramPhase.Characterize);
 
         if (Input.GetKeyDown(KeyCode.Q))       // press q: quit experiment
             Quit();
 
-        if (phase == ProgramPhase.ShowStimulus)      // show a new stimulus
+        if (phase == ProgramPhase.ShowStimulus)       // show a new stimulus
             ShowNextStimulus();
-        else if (phase == ProgramPhase.GetResponse)  // check for observer's keypress response to stimulus
+        else if (phase == ProgramPhase.GetResponse)   // check for observer's keypress response to stimulus
             CheckStimulusResponse();
-        else if (phase == ProgramPhase.Calibrate)    // check for keypress in calibration phase
-            CheckCalibrationResponse();
+        else if (phase == ProgramPhase.Characterize)  // check for keypress in characterization phase
+            CheckCharacterizationResponse();
 
     }
 
@@ -74,74 +74,74 @@ public class MainScript : MonoBehaviour
         // f = counterclockwise, j = clockwise
         if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.J))
         {
-            // normally we would record the stimulus and response here,
-            // but this is just a demonstration experiment
+            // normally we would record the stimulus and response information
+            // in a data file at this point, but this is just a demonstration experiment
             phase = ProgramPhase.ShowStimulus;
             Debug.Log("response recorded");
         }
     }
 
-    // ----- functions for calibration -----
+    // ----- functions for characterization -----
 
-    void SetCalibration(bool on)
+    void SetCharacterization(bool on)
     {
-        calPlane.SetActive(on);
+        charPlane.SetActive(on);
         if (on)
         {
-            // start calibraiton phase
-            phase = ProgramPhase.Calibrate;
-            InitCalibrationStimuli();
-            ShowNextCalibrationStimulus();
-            Debug.Log("starting calibration");
+            // start characterization phase
+            phase = ProgramPhase.Characterize;
+            InitCharacterizationStimuli();
+            ShowNextCharacterizationStimulus();
+            Debug.Log("starting characterization");
         }
         else
         {
             // return to experiment phase
-            phase = ProgramPhase.ShowStimulus;
-            Debug.Log("ending calibration");
+            phase = ProgramPhase.GetResponse;
+            Debug.Log("ending characterization");
         }
     }
 
-    void InitCalibrationStimuli()
+    void InitCharacterizationStimuli()
     {
-        // create list of stimuli for calibration
+        // create list of stimuli for characterization
         int n = 10;
-        calibrationList.Clear();
-        calibrationList.Add(new Color(0f, 0f, 0f));
+        characterizationList.Clear();
+        characterizationList.Add(new Color(0f, 0f, 0f));
         for (int i = 1; i <= n; i++)
         {
             float g = (float)i / (float)n;
-            if (chromaticCalibration)
+            if (chromaticCharacterization)
             {
-                calibrationList.Add(new Color(g, 0f, 0f));
-                calibrationList.Add(new Color(0f, g, 0f));
-                calibrationList.Add(new Color(0f, 0f, g));
+                characterizationList.Add(new Color(g, 0f, 0f));
+                characterizationList.Add(new Color(0f, g, 0f));
+                characterizationList.Add(new Color(0f, 0f, g));
             }
-            calibrationList.Add(new Color(g, g, g));
+            characterizationList.Add(new Color(g, g, g));
         }
     }
 
-    void CheckCalibrationResponse()
+    void CheckCharacterizationResponse()
     {
-        // press space: show next calibration stimulus
+        // press space: show next characterization stimulus
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if(!ShowNextCalibrationStimulus())
+            if(!ShowNextCharacterizationStimulus())
             {
-                SetCalibration(false);
-                Debug.Log("calibration finished");
+                SetCharacterization(false);
+                Debug.Log("characterization finished");
                 return;
             }
-            Debug.Log("next calibration stimulus shown");
         }
     }
 
-    bool ShowNextCalibrationStimulus()
+    bool ShowNextCharacterizationStimulus()
     {
-        if (calibrationList.Count == 0)
+        if (characterizationList.Count == 0)
             return false;
-        calMaterial.color = calibrationList[0];
-        calibrationList.RemoveAt(0);
+        charMaterial.color = characterizationList[0];
+        Debug.Log($"next characterization stimulus shown: {charMaterial.color.r:F2}, {charMaterial.color.g:F2}, {charMaterial.color.b:F2}");
+        characterizationList.RemoveAt(0);
         return true;
     }
 
@@ -155,7 +155,7 @@ public class MainScript : MonoBehaviour
 
     void Quit()
     {
-        Debug.Log("quitting experiment");
+        Debug.Log("ending experiment");
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

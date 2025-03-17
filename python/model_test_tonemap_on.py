@@ -90,7 +90,7 @@ for i in range(cuben):
     for j in range(3):
         handle2[i] = ax2.scatter(vv[kk, j], v_hat[kk, j] - vv[kk, j], color='rgb'[i])
 
-# find mean absolute error
+# find median absolute error
 err = np.concatenate(err, axis=0)
 mae = np.median(abs(err))
 ax2.text(0.1, -0.018, f'error = {255*mae:.2f} / 255', fontsize=12)

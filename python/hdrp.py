@@ -9,20 +9,24 @@ A = 0.055
 X = 0.04045
 Y = 0.0031308
 
-def srgb(x):
-    x = np.array(x).clip(0,1)
+def srgb(x, maxout=True):
+    ub = 1 if maxout else np.inf
+    x = np.array(x).clip(0, ub)
     return np.where(x<X, x/Phi, np.power((x+A)/(1+A), Gamma))
 
-def srgbinv(y):
-    y = np.array(y).clip(0,1)
+def srgbinv(y, maxout=True):
+    ub = 1 if maxout else np.inf
+    y = np.array(y).clip(0, ub)
     return np.where(y<Y, y*Phi, np.power(y, 1/Gamma)*(1+A)-A)
 
-def h(v, v0, gamma):
-    v = np.array(v).clip(v0,1)
+def h(v, v0, gamma, maxout=True):
+    ub = 1 if maxout else np.inf
+    v = np.array(v).clip(v0, ub)
     return ((v-v0)/(1-v0)) ** gamma
 
-def hinv(p, v0, gamma):
-    p = np.array(p).clip(0,1)
+def hinv(p, v0, gamma, maxout=True):
+    ub = 1 if maxout else np.inf
+    p = np.array(p).clip(0, ub)
     return v0 + (1-v0)*(p ** (1/gamma))
 
 def cubetag(fname):

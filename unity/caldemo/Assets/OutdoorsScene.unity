@@ -836,9 +836,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 246efcaa2c95743f298ccf2b7fc333b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chromaticCharacterization: 1
   stimulusObject: {fileID: 434344192}
-  calPlane: {fileID: 1060734997}
-  calMaterial: {fileID: 2100000, guid: 7937e65d2ec6d49dfa55b754ed5d901c, type: 2}
+  charPlane: {fileID: 1060734997}
+  charMaterial: {fileID: 2100000, guid: 7937e65d2ec6d49dfa55b754ed5d901c, type: 2}
   globalVolume: {fileID: 1328138600}
 --- !u!1 &2013410473
 GameObject:

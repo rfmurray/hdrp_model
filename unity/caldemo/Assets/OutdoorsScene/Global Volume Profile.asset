@@ -360,7 +360,7 @@ MonoBehaviour:
     m_Value: 1
   lutTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 8534537815417165676, guid: e5bd3c7edb49f4a81b001aebe699ade3,
+    m_Value: {fileID: 8534537815417165676, guid: bf847e6f0d84c49c3aa67ad697c68639,
       type: 3}
   lutContribution:
     m_OverrideState: 0
