@@ -81,7 +81,7 @@ for passnum in range(2):
     lb2 = np.array((tonemap[0].u_knot[i1-1],))
     ub2 = np.array((np.inf,))
     
-    # constraint: last knot point being varied is greater than its higher neighbour
+    # constraint: last knot point being varied is less than its higher neighbour
     A3 = np.zeros((1, nknot))
     A3[0,-1] = 1
     lb3 = np.array((-np.inf,))
