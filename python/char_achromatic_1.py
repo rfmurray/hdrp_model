@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 import matplotlib.pyplot as plt
-from hdrp import srgb, hinv, TonemapCube
+from hdrp import srgb, srgbinv, hinv, TonemapCube
 from charfit import CharLum
 
 # load luminance characterization measurements, made with tonemapping off
@@ -14,14 +14,6 @@ m_k = df['m_k'].to_numpy()
 lum = df['lum'].to_numpy()
 u_k = srgb(m_k)
 v_k = m_k
-
-# plot luminance vs. u_k
-xlim = np.array([0,1])
-plt.plot(u_k, lum, 'ro', markersize=10)
-plt.legend(['measurements'], frameon=False)
-plt.xlabel('unprocessed $u_k$', fontsize=18)
-plt.ylabel('luminance (cd/m$^2$)', fontsize=18)
-plt.show()
 
 # fit a characterization model to luminance vs. v_k
 char = CharLum(v=v_k, lum=lum)
@@ -65,6 +57,18 @@ pinit = t_knot[k1:k2+1]
 r = optimize.minimize(errfn, pinit)
 t_knot[k1:k2+1] = r.x
 tonemap.setchannels(t_knot)
+
+# show predicted effect of tonemapping with this cube file; we'll check
+# this with measurements in the second part of the test (char_achromatic_2.py)
+u = np.linspace(0, 1, 20)
+u3 = np.column_stack((u,u,u))
+t = tonemap.apply(u3)
+v = srgbinv(t)
+lum = char.v2lum(v[:,0])
+plt.plot(u, lum, 'ro-')
+plt.xlabel('unprocessed $u_k$', fontsize=18)
+plt.ylabel('predicted luminance (cd/m$^2$)', fontsize=18)
+plt.show()
 
 # save the cube file
 tonemap.save('cube/linearize_achromatic.cube')

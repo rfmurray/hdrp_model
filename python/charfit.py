@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 class CharLum:
 
     def __init__(self, v=None, lum=None):
-        # call constructor of parent?
 
         self.v = v if v is not None else None
         self.lum = lum if lum is not None else None
@@ -27,7 +26,7 @@ class CharLum:
         pinit = np.array((min(self.lum), max(self.lum) - min(self.lum), 0, gamma_hat))
 
         # optimize fit
-        cons = optimize.LinearConstraint(np.array((0, 0, 1, 0)).reshape((1, 4)), np.array((0,)))  # constrain v0 >= 0
+        cons = optimize.LinearConstraint(A=np.array([[0, 0, 1, 0]]), lb=0)  # constrain v0 >= 0
         r = optimize.minimize(errfn, pinit, constraints=cons)
         self.L0, self.L1, self.v0, self.gamma = r.x
 
@@ -72,7 +71,6 @@ class CharLum:
 class CharXYZ:
 
     def __init__(self, v=None, xyz=None):
-        # call constructor of parent?
 
         self.v = v if v is not None else None
         self.xyz = xyz if xyz is not None else None
@@ -125,12 +123,13 @@ class CharXYZ:
                 err += ((p[:,k]-phat)**2).sum()
             return err
         pinit = param2vec(self.rgb, self.z, self.v0, self.gamma)
-        err_pre = errfn(pinit)
-        print(f'{err_pre:.3g}')
-        cons = None  # define constraints v0 >= 0
+        
+        # define constraints v0 >= 0
+        A = np.zeros((3, pinit.size))
+        A[(0,1,2),(12,13,14)] = 1
+        cons = optimize.LinearConstraint(A=A, lb=0, ub=np.inf)
+        
         r = optimize.minimize(errfn, pinit, constraints=cons)
-        err_post = errfn(r.x)
-        print(f'{err_post:.3g}')
         self.rgb, self.z, self.v0, self.gamma = vec2param(r.x)
 
     def plot(self):
@@ -138,25 +137,22 @@ class CharXYZ:
         vv = np.linspace(0,1,100)
         for k in range(3):
             plt.plot(vv, self.h(vv, v0=self.v0[k], gamma=self.gamma[k]), 'rgb'[k] + '-')
+        for k in range(3):
             plt.plot(self.v[:, k], p[:, k], 'rgb'[k] + 'o')
         plt.xlabel('post-processed $v_k$', fontsize=18)
         plt.ylabel('activation', fontsize=18)
+        plt.legend(['red','green','blue'], frameon=False)
         plt.show()
 
-    def v2xyz(self, v, rgb=None, z=None, v0=None, gamma=None):
-        if rgb is None: rgb = self.rgb
-        if z is None: z = self.z
-        if v0 is None: v0 = self.v0
-        if gamma is None: gamma = self.gamma
-        # return L0 + L1 * self.h(v, v0=v0, gamma=gamma)
+    def v2xyz(self, v):
+        p = [self.h(v=v[:,k], k=k) for k in range(3)]
+        p = np.column_stack(p)
+        return p @ rgb + z
 
-    def xyz2v(self, lum, rgb=None, z=None, v0=None, gamma=None):
-        if rgb is None: rgb = self.rgb
-        if z is None: z = self.z
-        if v0 is None: v0 = self.v0
-        if gamma is None: gamma = self.gamma
-        # p = (lum-L0)/L1
-        # return self.hinv(p, v0=v0, gamma=gamma)
+    def xyz2v(self, xyz):
+        p = (xyz-z) @ np.linalg.inv(rgb)
+        v = [self.hinv(p[:,k], k=k) for k in range(3)]
+        return np.column_stack(v)
 
     def h(self, v, v0=None, gamma=None, k=None, maxout=True):
         if v0 is None: v0 = self.v0[k]
