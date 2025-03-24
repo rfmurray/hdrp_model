@@ -11,7 +11,7 @@ from hdrp import srgb, srgbinv, TonemapCube, cubetag
 df = pd.read_csv('data/data_delta.txt')
 
 # calculate unprocessed color coordinates u_k and tonemapped coordinates t_k
-df['u_k'] = 0.823 * df['i_d'] / np.pi   # use the Lambertian rendering model to find u_k
+df['u_k'] = 0.822 * df['i_d'] / np.pi   # use the Lambertian rendering model to find u_k
 df['t_k'] = srgb(df['v_r'])             # use the post-processed values in the red channel to find t_k
 
 # plot tonemapping results from one cube file (delta_16.cube)

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.interpolate import interpn
 import matplotlib.pyplot as plt
 
+# constants in the sRGB nonlinearity
 Phi = 12.92
 Gamma = 2.4
 A = 0.055
@@ -10,53 +11,51 @@ X = 0.04045
 Y = 0.0031308
 
 def srgb(x, maxout=True):
+    'sRGB nonlinearity; maxout determines whether the maximum value is 1.0'
     ub = 1 if maxout else np.inf
     x = np.array(x).clip(0, ub)
     return np.where(x<X, x/Phi, np.power((x+A)/(1+A), Gamma))
 
 def srgbinv(y, maxout=True):
+    'inverse of sRGB nonlinearity; maxout determines whether maximum value is 1.0'
     ub = 1 if maxout else np.inf
     y = np.array(y).clip(0, ub)
     return np.where(y<Y, y*Phi, np.power(y, 1/Gamma)*(1+A)-A)
 
-def h(v, v0, gamma, maxout=True):
-    ub = 1 if maxout else np.inf
-    v = np.array(v).clip(v0, ub)
-    return ((v-v0)/(1-v0)) ** gamma
-
-def hinv(p, v0, gamma, maxout=True):
-    ub = 1 if maxout else np.inf
-    p = np.array(p).clip(0, ub)
-    return v0 + (1-v0)*(p ** (1/gamma))
-
 def cubetag(fname):
+    'from filename of cube file, return a tag to use in filename of text data files'
     if len(fname) == 0:
         return ''
     _, f = os.path.split(fname)
     return '_' + os.path.splitext(f)[0]
 
+# class for tonemapping model
 class TonemapCube:
     
     def __init__(self, filename=''):
         
-        # knot point coordinates
+        # knot point coordinates, estimated empirically
         self.u_knot = np.array([0, 1e-09, 1.317e-09, 0.002826, 0.007251, 0.01279, 0.02061, 0.03115, 0.04511, 0.06479, 0.0903, 0.1258, 0.1734, 0.238, 0.3264, 0.4434, 0.6056, 0.8231, 1.104, 1.495, 2.032, 2.756, 3.738, 5.083, 6.864, 9.347, 12.62, 17.18, 23.24, 31.48, 42.75, 57.66])
 
-        # 4D array of RGB values
+        # 4D array of RGB values; outputs of tonemapping at knot points
         self.cube = None
         
         # interpolation method
         self.method = 'linear'
         
-        # filename of .cube file
+        # filename of cube file
         self.filename = filename
         if self.filename:
             self.load(filename)
     
     def setchannels(self, t_knot):
+        'from n x 1 or n x 3 array, create a 4D array for tonemapping that assumes independent channels'
+
+        # from 1D or n x 1 array, make a n x 3 array
         if t_knot.ndim==1 or t_knot.shape[1] == 1:
             t_knot = np.column_stack((t_knot, t_knot, t_knot))
 
+        # create the cube
         n = t_knot.shape[0]
         if n != self.u_knot.size:
             raise Exception('array size does not match number of knot points')
@@ -66,6 +65,7 @@ class TonemapCube:
         self.cube = np.concatenate((cubeR, cubeG, cubeB), axis=3)
 
     def apply(self, u_k):
+        'apply tonemapping model to unprocessed values u_k; look up tonemapped values in cube, interpolating if necessary'
         if u_k.shape[1] != 3:
             raise Exception('u_k must be an m x 3 array')
         u_k = u_k.clip(self.u_knot[2], self.u_knot[-1])
@@ -73,6 +73,7 @@ class TonemapCube:
         return t_k
         
     def load(self, filename=''):
+        'load cube file'
         if filename:
             self.filename = filename
         
@@ -96,6 +97,7 @@ class TonemapCube:
         self.cube = mat.reshape((n,n,n,3), order='F')
 
     def save(self, filename=''):
+        'save cube file'
         if filename:
             self.filename = filename
 
@@ -109,8 +111,9 @@ class TonemapCube:
         f.write('DOMAIN_MAX 1.0 1.0 1.0\n')
         np.savetxt(f, mat, fmt='%.6f')
         f.close()
-    
+
     def __repr__(self):
+        'string representation of object'
         s = 'u_knot = ' + str(self.u_knot) + '\n'
         s += 'cube.shape = ' + str(self.cube.shape) + '\n'
         s += 'filename = "' + self.filename + '"\n'

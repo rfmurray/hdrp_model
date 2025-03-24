@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import optimize
-from hdrp import srgb, srgbinv, h, hinv, TonemapCube
+from hdrp import srgb, srgbinv, TonemapCube
 from charfit import CharXYZ
 
 # load color characterization measurements, made with tonemapping off
@@ -26,7 +26,7 @@ w = (char.z @ np.linalg.inv(char.rgb)).reshape((1, 3))
 # also see comments on definition of f(u_k) in char_achromatic_1.py, which
 # apply to this definition as well
 def f_k(u_k, k):
-    return srgb(hinv((1+w[0,k])*u_k - w[0,k], v0=char.v0[k], gamma=char.gamma[k], maxout=False), maxout=False)
+    return srgb(char.hinv((1+w[0,k])*u_k - w[0,k], k=k, maxout=False), maxout=False)
 
 # create a tonemapping object by applying the tonemapping function f_k to the knot points
 tonemap = TonemapCube()
@@ -61,7 +61,7 @@ u = np.linspace(0, 1, 20)
 u3 = np.column_stack((u,u,u))
 t = tonemap.apply(u3)
 v = srgbinv(t)
-p = [h(v[:,k], v0=char.v0[k], gamma=char.gamma[k]) for k in range(3)]
+p = [char.h(v[:,k], k=k) for k in range(3)]
 p = np.column_stack(p)
 for k in range(3):
     plt.plot(u, (p + w)[:,k], 'rgb'[k] + 'o-')

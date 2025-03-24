@@ -30,7 +30,7 @@ costheta = (l*n).sum(axis=1, keepdims=True)  # cosine of angle between lighting 
 
 # apply rendering model to get predictions for unprocessed color coordinates u_k
 if testLambertian:
-    c = 0.823
+    c = 0.822
     u_hat = c * srgb(m) * ( i_d * srgb(d) * costheta.clip(min=0) / np.pi + i_a * a ) / (2**e)
 else:
     u_hat = srgb(m)

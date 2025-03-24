@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import optimize
-from hdrp import srgb, h, hinv, TonemapCube
+from hdrp import srgb, TonemapCube
 from charfit import CharXYZ
 
 # load color characterization measurements, made with tonemapping on

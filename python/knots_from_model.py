@@ -55,7 +55,7 @@ for passnum in range(2):
     
     # apply Lambertian or unlit rendering model
     if testLambertian:
-        c = 0.823
+        c = 0.822
         u_hat = c * srgb(m) * ( i_d * srgb(d) * costheta.clip(min=0) / np.pi + i_a * a ) / (2**e)
     else:
         u_hat = srgb(m)

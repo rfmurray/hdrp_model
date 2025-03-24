@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 import matplotlib.pyplot as plt
-from hdrp import srgb, srgbinv, hinv, TonemapCube
+from hdrp import srgb, srgbinv, TonemapCube
 from charfit import CharLum
 
 # load luminance characterization measurements, made with tonemapping off
@@ -18,7 +18,23 @@ v_k = m_k
 # fit a characterization model to luminance vs. v_k
 char = CharLum(v=v_k, lum=lum)
 char.fit()
-char.plot()
+
+# plot luminance vs. unprocessed values u_k
+# - the CharLum class has a method plot() that plots luminance vs.
+#   post-processed values v_k, which is what is of interest for viewing
+#   the fit of the characterization model; here, instead, we want to show
+#   that without tonemapping for gamma correction, luminance is a nonlinear
+#   function of u_k; so we'll plot that ourselves here.
+u_fit = np.linspace(0, 1, 100)
+v_fit = srgbinv(u_fit)
+lum_fit = char.v2lum(v_fit)
+plt.plot(u_fit, lum_fit, 'k-')
+u_data = srgb(char.v)
+plt.plot(u_data, char.lum, 'ro', markersize=10)
+plt.legend(['fit', 'measurements'], frameon=False)
+plt.xlabel('unprocessed $u_k$', fontsize=18)
+plt.ylabel('luminance (cd/m$^2$)', fontsize=18)
+plt.show()
 
 # define the tonemapping function for gamma correction; see equation (15)
 # - here we implicitly set r = 1, so the displayable range of u_k is [0, 1]
@@ -65,7 +81,8 @@ u3 = np.column_stack((u,u,u))
 t = tonemap.apply(u3)
 v = srgbinv(t)
 lum = char.v2lum(v[:,0])
-plt.plot(u, lum, 'ro-')
+plt.plot(u[[0,-1]], lum[[0,-1]], 'k-')
+plt.plot(u, lum, 'ro')
 plt.xlabel('unprocessed $u_k$', fontsize=18)
 plt.ylabel('predicted luminance (cd/m$^2$)', fontsize=18)
 plt.show()
