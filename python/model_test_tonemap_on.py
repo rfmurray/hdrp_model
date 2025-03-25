@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from hdrp import srgb, srgbinv, TonemapCube, cubetag
 
 # choose whether to test results from Unity project render_random with Lambertian or unlit material
-testLambertian = False
+testLambertian = True
 
 # choose cube files
 cubelist = ['cube/linear_max1.cube', 'cube/square_max1.cube', 'cube/square_root_max1.cube']
@@ -16,10 +16,9 @@ cuben = len(cubelist)
 tonemap = [TonemapCube(f) for f in cubelist]
 
 # knot points estimated from delta functions (Table 2a)
-# u_knot = [0, 1e-09, 0.0002606, 0.003104, 0.007305, 0.01288, 0.02056, 0.03061, 0.04468, 0.06393, 0.09056, 0.1245, 0.1712, 0.2354, 0.3236, 0.4406, 0.5938, 0.8165, 1.111, 1.498, 2.039, 2.776, 3.78, 5.094, 6.935, 9.441, 12.72, 17.32, 23.35, 31.78, 43.27, 58.9]
+#u_knot = [0, 1e-09, 0.0002606, 0.003104, 0.007305, 0.01288, 0.02056, 0.03061, 0.04468, 0.06393, 0.09056, 0.1245, 0.1712, 0.2354, 0.3236, 0.4406, 0.5938, 0.8165, 1.111, 1.498, 2.039, 2.776, 3.78, 5.094, 6.935, 9.441, 12.72, 17.32, 23.35, 31.78, 43.27, 58.9]
 
 # knot points estimated from model fitting (Table 2b)
-#u_knot = [0, 1e-09, 1.678e-09, 0.002834, 0.007145, 0.01271, 0.02053, 0.03089, 0.04484, 0.06452, 0.09000, 0.1254, 0.1728, 0.2373, 0.3257, 0.4428, 0.6046, 0.8219, 1.104, 1.495, 2.032, 2.756, 3.738, 5.083, 6.864, 9.347, 12.62, 17.18, 23.24, 31.48, 42.75, 57.66]
 u_knot = [0, 1e-09, 1.657e-09, 0.002830, 0.007137, 0.01269, 0.02051, 0.03086, 0.04479, 0.06444, 0.08989, 0.1252, 0.1726, 0.2370, 0.3253, 0.4422, 0.6039, 0.8207, 1.104, 1.495, 2.032, 2.756, 3.738, 5.083, 6.864, 9.347, 12.62, 17.18, 23.24, 31.48, 42.75, 57.66]
 
 # assign selected knot points to tonemapping objects
