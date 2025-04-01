@@ -21,4 +21,5 @@ plt.plot(u_k, lum, 'ro', markersize=10)
 plt.legend(['linear fit', 'measurements'], frameon=False)
 plt.xlabel('unprocessed $u_k$', fontsize=18)
 plt.ylabel('luminance (cd/m$^2$)', fontsize=18)
+plt.savefig('figures/char_achromatic_2.pdf');
 plt.show()

@@ -17,10 +17,32 @@ v = m
 # fit a characterization model to xyz vs. v
 char = CharXYZ(v=v, xyz=xyz)
 char.fit()
-char.plot()
 
 # express the background term as a weighted sum of the primaries; solve z = w @ rgb for w
 w = (char.z @ np.linalg.inv(char.rgb)).reshape((1, 3))
+
+# find the primary coefficients; solve xyz = coef @ rgb for coef
+coef = char.xyz @ np.linalg.inv(char.rgb)
+
+# plot primary coefficients vs. unprocessed values u_k
+# - the CharXYZ class has a method plot() that plots primary activation vs.
+#   post-processed values v_k, which is what is of interest for viewing
+#   the fit of the characterization model; here, instead, we want to show
+#   that without tonemapping for gamma correction, primary coefficients are
+#   a nonlinear function of u_k; so we'll plot that ourselves here.
+u_fit = np.linspace(0, 1, 100)
+v_fit = srgbinv(u_fit)
+for k in range(3):
+    coef_fit = char.h(v_fit, v0=char.v0[k], gamma=char.gamma[k]) + w[0,k]
+    plt.plot(u_fit, coef_fit, 'rgb'[k] + '-')
+u_data = srgb(char.v)
+for k in range(3):
+    plt.plot(u_data[:, k], coef[:, k], 'rgb'[k] + 'o')
+plt.xlabel('unprocessed $u_k$', fontsize=18)
+plt.ylabel('primary coefficient', fontsize=18)
+plt.legend(labels=['red','green','blue'], frameon=False)
+plt.savefig('figures/char_chromatic_1.pdf');
+plt.show()
 
 # define tonemapping function for gamma correction; see equation (24);
 # also see comments on definition of f(u_k) in char_achromatic_1.py, which
@@ -54,21 +76,6 @@ pinit = t_knot[k1:k2+1,:].flatten()
 r = optimize.minimize(errfn, pinit)
 t_knot[k1:k2+1,:] = r.x.reshape((-1,3))
 tonemap.setchannels(t_knot)
-
-# show predicted effect of tonemapping with this cube file; we'll check
-# this with measurements in the second part of the test (char_chromatic_2.py)
-u = np.linspace(0, 1, 20)
-u3 = np.column_stack((u,u,u))
-t = tonemap.apply(u3)
-v = srgbinv(t)
-p = [char.h(v[:,k], k=k) for k in range(3)]
-p = np.column_stack(p)
-for k in range(3):
-    plt.plot(u, (p + w)[:,k], 'rgb'[k] + 'o-')
-plt.xlabel('unprocessed $u_k$', fontsize=18)
-plt.ylabel('predicted primary coefficient', fontsize=18)
-plt.legend(['red','green','blue'], frameon=False)
-plt.show()
 
 # save the cube file
 tonemap.save('cube/linearize_chromatic.cube')

@@ -27,8 +27,7 @@ class CharLum:
 
         # make initial estimates of parameters
         k = self.v > 0.1
-        gamma_hat = linregress(np.log(self.v[k]), np.log(self.lum[k])).slope  # estimate gamma from slope in logarithmic coordinates
-        pinit = np.array((min(self.lum), max(self.lum) - min(self.lum), 0, gamma_hat))
+        pinit = np.array((min(self.lum), max(self.lum) - min(self.lum), 0, 3))
 
         # optimize fit
         # cons = optimize.LinearConstraint(A=np.array([[0, 0, 1, 0]]), lb=0)  # constrain v0 >= 0

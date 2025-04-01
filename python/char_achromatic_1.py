@@ -34,6 +34,7 @@ plt.plot(u_data, char.lum, 'ro', markersize=10)
 plt.legend(['fit', 'measurements'], frameon=False)
 plt.xlabel('unprocessed $u_k$', fontsize=18)
 plt.ylabel('luminance (cd/m$^2$)', fontsize=18)
+plt.savefig('figures/char_achromatic_1.pdf');
 plt.show()
 
 # define the tonemapping function for gamma correction; see equation (15)
@@ -73,19 +74,6 @@ pinit = t_knot[k1:k2+1]
 r = optimize.minimize(errfn, pinit)
 t_knot[k1:k2+1] = r.x
 tonemap.setchannels(t_knot)
-
-# show predicted effect of tonemapping with this cube file; we'll check
-# this with measurements in the second part of the test (char_achromatic_2.py)
-u = np.linspace(0, 1, 20)
-u3 = np.column_stack((u,u,u))
-t = tonemap.apply(u3)
-v = srgbinv(t)
-lum = char.v2lum(v[:,0])
-plt.plot(u[[0,-1]], lum[[0,-1]], 'k-')
-plt.plot(u, lum, 'ro')
-plt.xlabel('unprocessed $u_k$', fontsize=18)
-plt.ylabel('predicted luminance (cd/m$^2$)', fontsize=18)
-plt.show()
 
 # save the cube file
 tonemap.save('cube/linearize_achromatic.cube')

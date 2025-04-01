@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from hdrp import srgb, srgbinv, TonemapCube
 from charfit import CharLum, CharXYZ
 
@@ -34,8 +35,7 @@ fig = plt.figure(figsize=(13,5.5))
 ax1 = fig.add_subplot(1,2,1)
 ax1.plot(u_fit, lum_fit, 'r-')
 u_data = srgb(char.v)
-h1, = ax1.plot(u_data, char.lum, 'ro', markersize=10)
-h1.set_label('without tonemapping')
+ax1.plot(u_data, char.lum, 'ro', markersize=10)
 
 # 1b. achromatic characterization, with tonemapping on
 
@@ -46,69 +46,81 @@ lum = df['lum'].to_numpy()
 u_k = srgb(m_k)
 
 # find the linear regression of luminance vs. u_k, constrained to pass through the origin
-slope = np.linalg.lstsq(u_k.reshape(-1,1), lum.reshape(-1,1))[0].item()
+slope = np.linalg.lstsq(u_k.reshape(-1,1), lum.reshape(-1,1), rcond=-1)[0].item()
 
 # plot the data and the fit
 xlim = np.array([0,1])
 ax1.plot(xlim, slope * xlim, 'r-')
-h2, = ax1.plot(u_k, lum, 'rs', markersize=10)
-h2.set_label('with tonemapping')
+ax1.plot(u_k, lum, 'rs', markersize=10)
 
-#plt.legend(['linear fit', 'measurements'], frameon=False)
+# format this panel
+h1 = Line2D([0], [0], marker='s', color='r', markersize=10)
+h2 = Line2D([0], [0], marker='o', color='r', markersize=10)
+ax1.legend(handles=[h1, h2], labels=['with tonemapping', 'without tonemapping'], frameon=False)
 ax1.set_xlabel('unprocessed $u_k$', fontsize=18)
 ax1.set_ylabel('luminance (cd/m$^2$)', fontsize=18)
-ax1.text(0.02,380,'(a)',fontsize=24)
-ax1.legend(handles=[h2, h1], loc='lower right', frameon=False)
+ax1.text(0.85,15,'(a)',fontsize=24)
 
 # 2a. chromatic characterization, with tonemapping off
 
 # load xyz measurements
 df = pd.read_csv('data/characterize/data_chromatic_T0.txt')
-m = df[['m_r','m_g','m_b']].to_numpy()
-xyz = df[['x','y','z']].to_numpy()
-u = srgb(m)
-v = m.copy()
+m = df[['m_r', 'm_g', 'm_b']].to_numpy()
+xyz = df[['x', 'y', 'z']].to_numpy()
+v = m
 
-# fit a characterization model to xyz vs. v_k
+# fit a characterization model to xyz vs. v
 char = CharXYZ(v=v, xyz=xyz)
 char.fit()
 
-# plot xyz vs. unprocessed values u_k
-#u_fit = np.linspace(0, 1, 100)
-#v_fit = srgbinv(u_fit)
-#lum_fit = char.v2lum(v_fit)
+# express the background term as a weighted sum of the primaries; solve z = w @ rgb for w
+w = (char.z @ np.linalg.inv(char.rgb)).reshape((1, 3))
+
+# plot primary coefficients vs. unprocessed values u_k
 ax2 = fig.add_subplot(1,2,2)
-#ax2.plot(u_fit, lum_fit, 'r-')
-u = srgb(char.v)
-colors = ['red', 'green', 'blue']
-for i in range(3):
-#    k = v[:,i] > 0 and v[:,[0,1,2]-i] == 0
-    h, = ax2.plot(u[:,i], char.xyz[:,i], 'rgb'[i] + 'o', markersize=10)
-    h.set_label(colors[i] + ' channel')
-    
+coef = char.xyz @ np.linalg.inv(char.rgb) # find the coefficients; solve xyz = coef @ rgb for coef
+u_fit = np.linspace(0, 1, 100)
+v_fit = srgbinv(u_fit)
+for k in range(3):
+    coef_fit = char.h(v_fit, v0=char.v0[k], gamma=char.gamma[k]) + w[0,k]
+    ax2.plot(u_fit, coef_fit, 'rgb'[k] + '-')
+u_data = srgb(char.v)
+for k in range(3):
+    ax2.plot(u_data[:, k], coef[:, k], 'rgb'[k] + 'o', markersize=10)
 
 # 2b. chromatic characterization, with tonemapping on
 
-## load luminance characterization measurements, made with tonemapping on
-#df = pd.read_csv('data/characterize/data_achromatic_T1.txt')
-#m_k = df['m_k'].to_numpy()
-#lum = df['lum'].to_numpy()
-#u_k = srgb(m_k)
-#
-## find the linear regression of luminance vs. u_k, constrained to pass through the origin
-#slope = np.linalg.lstsq(u_k.reshape(-1,1), lum.reshape(-1,1))[0].item()
-#
-## plot the data and the fit
-#xlim = np.array([0,1])
-#ax2.plot(xlim, slope * xlim, 'g-')
-#ax2.plot(u_k, lum, 'go', markersize=10)
-#
-##plt.legend(['linear fit', 'measurements'], frameon=False)
+# load color characterization measurements, made with tonemapping on
+df = pd.read_csv('data/characterize/data_chromatic_T1.txt')
+m = df[['m_r', 'm_g', 'm_b']].to_numpy()
+xyz = df[['x', 'y', 'z']].to_numpy()
+u = srgb(m)
+v = m
+
+# fit a characterization model to xyz vs. v
+char = CharXYZ(v=v, xyz=xyz)
+char.fit()
+
+# find the primary coefficients; solve xyz = coef @ rgb for coef
+coef = char.xyz @ np.linalg.inv(char.rgb)
+
+# plot the data and linear fits
+u_data = srgb(char.v)
+xlim = np.array([0,1])
+for k in range(3):
+    x = u_data[:,k].reshape((-1,1))
+    y = coef[:,k].reshape((-1,1))
+    slope = np.linalg.lstsq(x, y, rcond=-1)[0].item()
+    ax2.plot(xlim, slope * xlim, 'rgb'[k] + '-')
+for k in range(3):
+    ax2.plot(u_data[:, k], coef[:, k], 'rgb'[k] + 's', markersize=10)
+
+h1 = Line2D([0], [0], marker='s', color='b', markersize=10)
+h2 = Line2D([0], [0], marker='o', color='b', markersize=10)
+ax2.legend(handles=[h1, h2], labels=['with tonemapping', 'without tonemapping'], frameon=False)
 
 ax2.set_xlabel('unprocessed $u_k$', fontsize=18)
-ax2.set_ylabel('primary activation', fontsize=18)
-ax2.text(0.02,380,'(b)',fontsize=24)
-#ax2.legend(loc='lower right', frameon=False)
-
+ax2.set_ylabel('primary coefficient', fontsize=18)
+ax2.text(0.85,0.06,'(b)',fontsize=24)
 plt.savefig(f'figures/characterize.pdf', bbox_inches='tight')
 plt.show()
