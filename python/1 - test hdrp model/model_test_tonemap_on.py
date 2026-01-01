@@ -3,6 +3,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+import sys
+sys.path.append('..')
 from hdrp import srgb, srgbinv, TonemapCube, cubetag
 
 # choose whether to test results from Unity project render_random with Lambertian or unlit material

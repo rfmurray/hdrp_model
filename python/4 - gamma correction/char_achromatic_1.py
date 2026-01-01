@@ -5,8 +5,11 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 import matplotlib.pyplot as plt
-from hdrp import srgb, srgbinv, TonemapCube
 from charfit import CharLum
+
+import sys
+sys.path.append('..')
+from hdrp import srgb, srgbinv, TonemapCube
 
 # load luminance characterization measurements, made with tonemapping off
 df = pd.read_csv('data/characterize/data_achromatic_T0.txt')
