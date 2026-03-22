@@ -1,21 +1,18 @@
 # char_figure.py  Plot achromatic and chromatic characterization data,
 #                 with and without tonemapping for data correction
 
-import sys
 import numpy as np
 import pandas as pd
 from scipy import optimize
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from charfit import CharLum, CharXYZ
-
-sys.path.append('..')
 from hdrp import srgb, srgbinv, TonemapCube
+from charfit import CharLum, CharXYZ
 
 # 1a. achromatic characterization, with tonemapping off
 
 # load luminance measurements
-df = pd.read_csv('../data/characterize/data_achromatic_T0.txt')
+df = pd.read_csv('data/characterize/data_achromatic_T0.txt')
 m_k = df['m_k'].to_numpy()
 lum = df['lum'].to_numpy()
 u_k = srgb(m_k)
@@ -43,7 +40,7 @@ ax1.plot(u_data, char.lum, 'ro', markersize=10)
 # 1b. achromatic characterization, with tonemapping on
 
 # load luminance characterization measurements, made with tonemapping on
-df = pd.read_csv('../data/characterize/data_achromatic_T1.txt')
+df = pd.read_csv('data/characterize/data_achromatic_T1.txt')
 m_k = df['m_k'].to_numpy()
 lum = df['lum'].to_numpy()
 u_k = srgb(m_k)
@@ -67,7 +64,7 @@ ax1.text(0.85,15,'(a)',fontsize=24)
 # 2a. chromatic characterization, with tonemapping off
 
 # load xyz measurements
-df = pd.read_csv('../data/characterize/data_chromatic_T0.txt')
+df = pd.read_csv('data/characterize/data_chromatic_T0.txt')
 m = df[['m_r', 'm_g', 'm_b']].to_numpy()
 xyz = df[['x', 'y', 'z']].to_numpy()
 v = m
@@ -94,7 +91,7 @@ for k in range(3):
 # 2b. chromatic characterization, with tonemapping on
 
 # load color characterization measurements, made with tonemapping on
-df = pd.read_csv('../data/characterize/data_chromatic_T1.txt')
+df = pd.read_csv('data/characterize/data_chromatic_T1.txt')
 m = df[['m_r', 'm_g', 'm_b']].to_numpy()
 xyz = df[['x', 'y', 'z']].to_numpy()
 u = srgb(m)
@@ -125,5 +122,5 @@ ax2.legend(handles=[h1, h2], labels=['with tonemapping', 'without tonemapping'],
 ax2.set_xlabel('unprocessed $u_k$', fontsize=18)
 ax2.set_ylabel('primary coefficient', fontsize=18)
 ax2.text(0.85,0.06,'(b)',fontsize=24)
-plt.savefig(f'../figures/characterize.pdf', bbox_inches='tight')
+plt.savefig(f'figures/characterize.pdf', bbox_inches='tight')
 plt.show()

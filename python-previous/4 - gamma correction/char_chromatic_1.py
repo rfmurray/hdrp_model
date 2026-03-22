@@ -1,18 +1,15 @@
 # char_chromatic_1.py  Characterize chromatic stimulus display and generate a cube file
 #                      for gamma correction
 
-import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import optimize
+from hdrp import srgb, srgbinv, TonemapCube
 from charfit import CharXYZ
 
-sys.path.append('..')
-from hdrp import srgb, srgbinv, TonemapCube
-
 # load color characterization measurements, made with tonemapping off
-df = pd.read_csv('../data/characterize/data_chromatic_T0.txt')
+df = pd.read_csv('data/characterize/data_chromatic_T0.txt')
 m = df[['m_r', 'm_g', 'm_b']].to_numpy()
 xyz = df[['x', 'y', 'z']].to_numpy()
 v = m
@@ -44,7 +41,7 @@ for k in range(3):
 plt.xlabel('unprocessed $u_k$', fontsize=18)
 plt.ylabel('primary coefficient', fontsize=18)
 plt.legend(labels=['red','green','blue'], frameon=False)
-plt.savefig('../figures/char_chromatic_1.pdf');
+plt.savefig('figures/char_chromatic_1.pdf');
 plt.show()
 
 # define tonemapping function for gamma correction; see equation (24);
@@ -81,4 +78,4 @@ t_knot[k1:k2+1,:] = r.x.reshape((-1,3))
 tonemap.setchannels(t_knot)
 
 # save the cube file
-tonemap.save('../cube/linearize_chromatic.cube')
+tonemap.save('cube/linearize_chromatic.cube')

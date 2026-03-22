@@ -1,17 +1,14 @@
 # char_chromatic_2.py  Test whether primary coefficients are proportional to u_k
 
-import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import optimize
+from hdrp import srgb, TonemapCube
 from charfit import CharXYZ
 
-sys.path.append('..')
-from hdrp import srgb
-
 # load color characterization measurements, made with tonemapping on
-df = pd.read_csv('../data/characterize/data_chromatic_T1.txt')
+df = pd.read_csv('data/characterize/data_chromatic_T1.txt')
 m = df[['m_r', 'm_g', 'm_b']].to_numpy()
 xyz = df[['x', 'y', 'z']].to_numpy()
 u = srgb(m)
@@ -43,5 +40,5 @@ for k in range(3):
 plt.xlabel('unprocessed $u_k$', fontsize=18)
 plt.ylabel('primary coefficient', fontsize=18)
 plt.legend(labels=['red','green','blue'], frameon=False)
-plt.savefig('../figures/char_chromatic_2.pdf');
+plt.savefig('figures/char_chromatic_2.pdf');
 plt.show()

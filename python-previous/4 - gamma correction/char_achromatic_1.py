@@ -1,18 +1,18 @@
 # char_achromatic_1.py  Characterize achromatic stimulus display and generate a cube file
 #                       for gamma correction
 
-import sys
 import numpy as np
 import pandas as pd
 from scipy import optimize
 import matplotlib.pyplot as plt
 from charfit import CharLum
 
+import sys
 sys.path.append('..')
 from hdrp import srgb, srgbinv, TonemapCube
 
 # load luminance characterization measurements, made with tonemapping off
-df = pd.read_csv('../data/characterize/data_achromatic_T0.txt')
+df = pd.read_csv('data/characterize/data_achromatic_T0.txt')
 m_k = df['m_k'].to_numpy()
 lum = df['lum'].to_numpy()
 u_k = srgb(m_k)
@@ -37,7 +37,7 @@ plt.plot(u_data, char.lum, 'ro', markersize=10)
 plt.legend(['fit', 'measurements'], frameon=False)
 plt.xlabel('unprocessed $u_k$', fontsize=18)
 plt.ylabel('luminance (cd/m$^2$)', fontsize=18)
-plt.savefig('../figures/char_achromatic_1.pdf');
+plt.savefig('figures/char_achromatic_1.pdf');
 plt.show()
 
 # define the tonemapping function for gamma correction; see equation (15)
@@ -79,4 +79,4 @@ t_knot[k1:k2+1] = r.x
 tonemap.setchannels(t_knot)
 
 # save the cube file
-tonemap.save('../cube/linearize_achromatic.cube')
+tonemap.save('cube/linearize_achromatic.cube')
