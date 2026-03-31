@@ -22,6 +22,9 @@ tonemap = [TonemapCube(f) for f in cubelist]
 #u_knot = [0, 1e-09, 0.0002606, 0.003104, 0.007305, 0.01288, 0.02056, 0.03061, 0.04468, 0.06393, 0.09056, 0.1245, 0.1712, 0.2354, 0.3236, 0.4406, 0.5938, 0.8165, 1.111, 1.498, 2.039, 2.776, 3.78, 5.094, 6.935, 9.441, 12.72, 17.32, 23.35, 31.78, 43.27, 58.9]
 
 # knot points estimated from model fitting (Table 2b)
+# - we'll use these values here, since these are the values coded into the class TonemapCube;
+#   and so they're the values used in the script '1 - create cube files/make_cubes.py'
+#   that creates the cube files used in Unity to make the tonemapping measurements
 u_knot = [0, 1e-09, 1.657e-09, 0.002830, 0.007137, 0.01269, 0.02051, 0.03086, 0.04479, 0.06444, 0.08989, 0.1252, 0.1726, 0.2370, 0.3253, 0.4422, 0.6039, 0.8207, 1.104, 1.495, 2.032, 2.756, 3.738, 5.083, 6.864, 9.347, 12.62, 17.18, 23.24, 31.48, 42.75, 57.66]
 
 # assign selected knot points to tonemapping objects

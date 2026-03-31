@@ -30,7 +30,8 @@ costheta = (l*n).sum(axis=1, keepdims=True)  # cosine of angle between lighting 
 # coordinates u_k, without rendering scale constant c
 u_hat = srgb(m) * ( i_d * srgb(d) * costheta.clip(min=0) / np.pi + i_a * a ) / (2**e)
 
-# apply sRGB nonlinearity to get actual rendered color coordinates u_k
+# apply sRGB nonlinearity to screen-captured values v_k to get actual rendered
+# color coordinates u_k
 u = srgb(v)
 
 # discard values outside [ 0, 0.95 ]
@@ -38,7 +39,7 @@ k = (u < 0) | (u > 0.95) | (u_hat < 0) | (u_hat > 0.95)
 u[k] = np.nan
 u_hat[k] = np.nan
 
-# plot predicted rendered color coordinates u_k against actual coordinates
+# plot predicted rendered color coordinates u_k against actual u_k
 xylim = np.array([0,1.1])
 k = np.random.randint(low=0, high=u.shape[0], size=100)
 for i in range(3):
